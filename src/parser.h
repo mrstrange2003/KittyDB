@@ -1,8 +1,10 @@
-#ifdef PARSER_H
+#ifndef PARSER_H
 #define PARSER_H
 #include<string>
 
 enum class CommandType{
+    CREATE_DATABASE,
+    USE_DATABASE,
     CREATE,
     INSERT,
     SELECT,
@@ -14,6 +16,8 @@ enum class CommandType{
 struct  ParsedCommand
 {
     CommandType type;
+
+    std::string databasename;
     std::string tableName;
     std::string values; //INSERT
     std::string schema; //CREATE
@@ -21,6 +25,6 @@ struct  ParsedCommand
     std::string setClause; //UPDATE
 };
 
-ParsedCommand parseCommand(const std::string&& command);
+ParsedCommand parseCommand(const std::string& command);
 
 #endif
