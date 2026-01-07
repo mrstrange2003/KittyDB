@@ -17,7 +17,7 @@ struct  ParsedCommand
 {
     CommandType type;
 
-    std::string databasename;
+    std::string databaseName;
     std::string tableName;
     std::string values; //INSERT
     std::string schema; //CREATE
