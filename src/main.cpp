@@ -1,16 +1,24 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include<sys/stat.h>
+#include <sys/stat.h>
 #include "parser.h"
 #include "db.h"
 
 using namespace std;
+
+bool directoryExists(const string &path)
+{
+    struct stat info;
+    return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
+}
+
 int main()
 {
-    string currentDatabase="";
     cout << "Welcome to KittyDB" << endl;
     cout << "Type 'exit' to quit" << endl;
+
+    string currentDatabase = "";
 
     while (true)
     {
@@ -35,24 +43,43 @@ int main()
 
         switch (pc.type)
         {
-        case CommandType::CREATE_DATABASE: {
+        case CommandType::CREATE_DATABASE:
+        {
             std::string error;
-            if(createDatabase(pc.databaseName, error)){
-                cout<<"Database '"<<pc.databaseName<<"' created successfully."<<endl;
+            if (createDatabase(pc.databaseName, error))
+            {
+                cout << "Database '" << pc.databaseName << "' created successfully." << endl;
             }
-            else{
-                cout<<"Error: "<<error<<endl;
+            else
+            {
+                cout << "Error: " << error << endl;
             }
             break;
         }
-            
 
         case CommandType::USE_DATABASE:
-            cout << "USE DATABASE\n";
-            cout << "Database: " << pc.databaseName << endl;
+        {
+            string dbPath = "..\\databases\\" + pc.databaseName;
+
+            if (!directoryExists(dbPath))
+            {
+                cout << "Error: database '" << pc.databaseName << "' does not exist." << endl;
+            }
+            else
+            {
+                currentDatabase = pc.databaseName;
+                cout << "Using database '" << currentDatabase << "'" << endl;
+            }
             break;
+        }
 
         case CommandType::CREATE:
+
+            if(currentDatabase.empty()){
+                cout<<"Error: No database selected. Use USE <database> first."<<endl;
+                break;
+            }
+
             cout << "CREATE TABLE\n";
             cout << "Table: " << pc.tableName << endl;
             cout << "Schema: " << pc.schema << endl;
