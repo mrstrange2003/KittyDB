@@ -1,27 +1,22 @@
 #include "db.h"
-#include<filesystem>
+#include <direct.h>   // _mkdir
+#include <string>
 
-namespace fs= std::filesystem;
-
-bool createDatabase(const std::string& dbName, std::string& error){
-    if(dbName.empty()){
-        error= "Database name can't be empty";
+bool createDatabase(const std::string& dbName, std::string& error) {
+    if (dbName.empty()) {
+        error = "Database name can't be empty";
         return false;
     }
 
-    fs::path dbPath= fs::path("../databases") / dbName;
+    std::string path = "..\\databases\\" + dbName;
 
-    if(fs::exists(dbPath)){
-        error = "Database already exists";
+    // Try creating directory
+    int result = _mkdir(path.c_str());
+
+    if (result == 0) {
+        return true; // success
+    } else {
+        error = "Database already exists and cannot be created";
         return false;
     }
-
-    try{
-        fs::create_directories(dbPath);
-    } catch(...){
-        error="Failed to create database directory";
-        return false;
-    }
-
-    return true;
 }
