@@ -1,11 +1,14 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include<sys/stat.h>
 #include "parser.h"
+#include "db.h"
 
 using namespace std;
 int main()
 {
+    string currentDatabase="";
     cout << "Welcome to KittyDB" << endl;
     cout << "Type 'exit' to quit" << endl;
 
@@ -32,10 +35,17 @@ int main()
 
         switch (pc.type)
         {
-        case CommandType::CREATE_DATABASE:
-            cout << "CREATE DATABASE\n";
-            cout << "Database: " << pc.databaseName << endl;
+        case CommandType::CREATE_DATABASE: {
+            std::string error;
+            if(createDatabase(pc.databaseName, error)){
+                cout<<"Database '"<<pc.databaseName<<"' created successfully."<<endl;
+            }
+            else{
+                cout<<"Error: "<<error<<endl;
+            }
             break;
+        }
+            
 
         case CommandType::USE_DATABASE:
             cout << "USE DATABASE\n";
@@ -78,4 +88,5 @@ int main()
         }
     }
     cout << "Exiting KittyDB..." << endl;
+    return 0;
 }
