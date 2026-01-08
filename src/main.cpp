@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include "parser.h"
 #include "db.h"
+#include "table.h"
 
 using namespace std;
 
@@ -74,16 +75,25 @@ int main()
         }
 
         case CommandType::CREATE:
-
-            if(currentDatabase.empty()){
-                cout<<"Error: No database selected. Use USE <database> first."<<endl;
+        {
+            if (currentDatabase.empty())
+            {
+                cout << "Error: no database selected. Use USE <database> first." << endl;
                 break;
             }
 
-            cout << "CREATE TABLE\n";
-            cout << "Table: " << pc.tableName << endl;
-            cout << "Schema: " << pc.schema << endl;
+            string error;
+            if (createTable(currentDatabase, pc.tableName, pc.schema, error))
+            {
+                cout << "Table '" << pc.tableName
+                     << "' created in database '" << currentDatabase << "'." << endl;
+            }
+            else
+            {
+                cout << "Error: " << error << endl;
+            }
             break;
+        }
 
         case CommandType::INSERT:
             cout << "INSERT\n";
