@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "db.h"
 #include "table.h"
+#include "insert.h"
 
 using namespace std;
 
@@ -96,10 +97,24 @@ int main()
         }
 
         case CommandType::INSERT:
-            cout << "INSERT\n";
-            cout << "Table: " << pc.tableName << endl;
-            cout << "Values: " << pc.values << endl;
+        {
+            if (currentDatabase.empty())
+            {
+                cout << "Error: no database selected." << endl;
+                break;
+            }
+
+            string error;
+            if (insertRow(currentDatabase, pc.tableName, pc.values, error))
+            {
+                cout << "1 row inserted into '" << pc.tableName << "'." << endl;
+            }
+            else
+            {
+                cout << "Error: " << error << endl;
+            }
             break;
+        }
 
         case CommandType::SELECT:
             cout << "SELECT\n";
