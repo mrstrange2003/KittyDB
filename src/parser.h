@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 #include<string>
+#include<vector>
 
 enum class CommandType{
     CREATE_DATABASE,
@@ -19,6 +20,8 @@ struct  ParsedCommand
 
     std::string databaseName;
     std::string tableName;
+
+    std::vector<std::string> selectedColumns;
     std::string values; //INSERT
     std::string schema; //CREATE
     std::string whereClause; //SELECT/DELETE/UPDATE
