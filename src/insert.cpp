@@ -1,7 +1,12 @@
 #include "insert.h"
+#include "schema.h"
+
 #include <fstream>
 #include <string>
+#include <vector>
 #include <sys/stat.h>
+
+// ---------- helpers ----------
 
 // check directory exists
 static bool directoryExists(const std::string& path) {
@@ -15,7 +20,7 @@ static bool fileExists(const std::string& path) {
     return (stat(path.c_str(), &info) == 0);
 }
 
-// remove quotes + spaces
+// trim spaces + remove surrounding quotes
 static std::string cleanValue(std::string v) {
     while (!v.empty() && v.front() == ' ') v.erase(v.begin());
     while (!v.empty() && v.back() == ' ') v.pop_back();
@@ -26,12 +31,15 @@ static std::string cleanValue(std::string v) {
     return v;
 }
 
+// ---------- main logic ----------
+
 bool insertRow(
     const std::string& databaseName,
     const std::string& tableName,
     const std::string& values,
     std::string& error
 ) {
+    // 1️⃣ basic checks
     if (databaseName.empty()) {
         error = "No database selected";
         return false;
@@ -52,22 +60,41 @@ bool insertRow(
         return false;
     }
 
-    // Parse VALUES (comma separated) - values string is already without outer parens
-    std::string row;
-    std::string temp;
-    std::string inside = values;
+    // 2️⃣ parse schema
+    std::vector<Column> columns;
+    if (!parseSchema(metaPath, columns, error)) {
+        return false;
+    }
 
-    for (size_t i = 0; i < inside.size(); i++) {
-        if (inside[i] == ',') {
-            row += cleanValue(temp) + "|";
+    // 3️⃣ parse VALUES into vector
+    std::vector<std::string> parsedValues;
+    std::string temp;
+
+    for (size_t i = 0; i < values.size(); i++) {
+        if (values[i] == ',') {
+            parsedValues.push_back(cleanValue(temp));
             temp.clear();
         } else {
-            temp += inside[i];
+            temp += values[i];
         }
     }
-    row += cleanValue(temp);
+    parsedValues.push_back(cleanValue(temp));
 
-    // Append row to table
+    // 4️⃣ enforce column count
+    if (parsedValues.size() != columns.size()) {
+        error = "Column count mismatch";
+        return false;
+    }
+
+    // 5️⃣ build row string (pipe-separated)
+    std::string row;
+    for (size_t i = 0; i < parsedValues.size(); i++) {
+        row += parsedValues[i];
+        if (i != parsedValues.size() - 1)
+            row += "|";
+    }
+
+    // 6️⃣ append to .tbl
     std::ofstream tblFile(tblPath, std::ios::app);
     if (!tblFile) {
         error = "Failed to write to table";
