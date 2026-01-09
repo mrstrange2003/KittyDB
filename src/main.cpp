@@ -120,7 +120,10 @@ int main()
         case CommandType::SELECT:
         {
             std::string error;
-            if (!selectAll(currentDatabase, pc.tableName, error))
+            if (!selectColumns(currentDatabase,
+                            pc.tableName,
+                            pc.selectedColumns,
+                            error))
             {
                 std::cout << "Error: " << error << std::endl;
             }
