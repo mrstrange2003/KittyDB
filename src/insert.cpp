@@ -1,5 +1,6 @@
 #include "insert.h"
 #include "schema.h"
+#include "types.h"
 
 #include <fstream>
 #include <string>
@@ -9,23 +10,29 @@
 // ---------- helpers ----------
 
 // check directory exists
-static bool directoryExists(const std::string& path) {
+static bool directoryExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 }
 
 // check file exists
-static bool fileExists(const std::string& path) {
+static bool fileExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0);
 }
 
 // trim spaces + remove surrounding quotes
-static std::string cleanValue(std::string v) {
-    while (!v.empty() && v.front() == ' ') v.erase(v.begin());
-    while (!v.empty() && v.back() == ' ') v.pop_back();
+static std::string cleanValue(std::string v)
+{
+    while (!v.empty() && v.front() == ' ')
+        v.erase(v.begin());
+    while (!v.empty() && v.back() == ' ')
+        v.pop_back();
 
-    if (v.size() >= 2 && v.front() == '"' && v.back() == '"') {
+    if (v.size() >= 2 && v.front() == '"' && v.back() == '"')
+    {
         v = v.substr(1, v.size() - 2);
     }
     return v;
@@ -34,35 +41,39 @@ static std::string cleanValue(std::string v) {
 // ---------- main logic ----------
 
 bool insertRow(
-    const std::string& databaseName,
-    const std::string& tableName,
-    const std::string& values,
-    std::string& error
-) {
+    const std::string &databaseName,
+    const std::string &tableName,
+    const std::string &values,
+    std::string &error)
+{
     // 1️⃣ basic checks
-    if (databaseName.empty()) {
+    if (databaseName.empty())
+    {
         error = "No database selected";
         return false;
     }
 
     std::string basePath = "..\\databases\\" + databaseName + "\\";
 
-    if (!directoryExists(basePath)) {
+    if (!directoryExists(basePath))
+    {
         error = "Database does not exist";
         return false;
     }
 
-    std::string tblPath  = basePath + tableName + ".tbl";
+    std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
-    if (!fileExists(metaPath) || !fileExists(tblPath)) {
+    if (!fileExists(metaPath) || !fileExists(tblPath))
+    {
         error = "Table does not exist";
         return false;
     }
 
     // 2️⃣ parse schema
     std::vector<Column> columns;
-    if (!parseSchema(metaPath, columns, error)) {
+    if (!parseSchema(metaPath, columns, error))
+    {
         return false;
     }
 
@@ -70,25 +81,41 @@ bool insertRow(
     std::vector<std::string> parsedValues;
     std::string temp;
 
-    for (size_t i = 0; i < values.size(); i++) {
-        if (values[i] == ',') {
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        if (values[i] == ',')
+        {
             parsedValues.push_back(cleanValue(temp));
             temp.clear();
-        } else {
+        }
+        else
+        {
             temp += values[i];
         }
     }
     parsedValues.push_back(cleanValue(temp));
 
     // 4️⃣ enforce column count
-    if (parsedValues.size() != columns.size()) {
+    if (parsedValues.size() != columns.size())
+    {
         error = "Column count mismatch";
         return false;
     }
 
+    for (size_t i = 0; i < columns.size(); i++)
+    {
+        if (!validateValueForType(parsedValues[i], columns[i].type))
+        {
+            error = "Type mismatch for column '" + columns[i].name +
+                    "' (expected " + columns[i].type + ")";
+            return false;
+        }
+    }
+
     // 5️⃣ build row string (pipe-separated)
     std::string row;
-    for (size_t i = 0; i < parsedValues.size(); i++) {
+    for (size_t i = 0; i < parsedValues.size(); i++)
+    {
         row += parsedValues[i];
         if (i != parsedValues.size() - 1)
             row += "|";
@@ -96,7 +123,8 @@ bool insertRow(
 
     // 6️⃣ append to .tbl
     std::ofstream tblFile(tblPath, std::ios::app);
-    if (!tblFile) {
+    if (!tblFile)
+    {
         error = "Failed to write to table";
         return false;
     }
