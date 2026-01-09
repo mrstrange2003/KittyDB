@@ -6,6 +6,7 @@
 #include "db.h"
 #include "table.h"
 #include "insert.h"
+#include "select.h"
 
 using namespace std;
 
@@ -117,10 +118,14 @@ int main()
         }
 
         case CommandType::SELECT:
-            cout << "SELECT\n";
-            cout << "Table: " << pc.tableName << endl;
-            cout << "Where: " << pc.whereClause << endl;
+        {
+            std::string error;
+            if (!selectAll(currentDatabase, pc.tableName, error))
+            {
+                std::cout << "Error: " << error << std::endl;
+            }
             break;
+        }
 
         case CommandType::DELETE_CMD:
             cout << "DELETE\n";
