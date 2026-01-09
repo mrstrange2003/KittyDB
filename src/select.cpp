@@ -16,22 +16,18 @@ static bool fileExists(const std::string& path){
     return (stat(path.c_str(), &info)==0);
 }
 
-bool selectAll(
+bool selectColumns(
     const std::string& databaseName,
     const std::string& tableName,
+    const std::vector<std::string>& selectedColumns,
     std::string& error
-){
-    if(databaseName.empty()){
-        error="No database selected";
+) {
+    if (databaseName.empty()) {
+        error = "No database selected";
         return false;
     }
 
-    std::string basePath= "..\\databases\\"+databaseName+"\\";
-    if(!directoryExists(basePath)){
-        error="Database doesn not exist";
-        return false;
-    }
-
+    std::string basePath = "..\\databases\\" + databaseName + "\\";
     std::string tblPath  = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
@@ -40,48 +36,69 @@ bool selectAll(
         return false;
     }
 
-    //parse schema
+    // parse schema
     std::vector<Column> columns;
     if (!parseSchema(metaPath, columns, error)) {
         return false;
     }
 
-    //print header
-    for (size_t i = 0; i < columns.size(); i++) {
-        std::cout << columns[i].name;
-        if (i != columns.size() - 1)
-            std::cout << " | ";
-    }
-    std::cout << "\n";
+    // map selected column names → indexes
+    std::vector<int> colIndexes;
 
-    // separator
-    for (size_t i = 0; i < columns.size(); i++) {
-        std::cout << "--------";
-    }
-    std::cout << "\n";
-
-    //read and print rows
-    std::ifstream tblFile(tblPath);
-    if (!tblFile) {
-        error = "Failed to open table data";
-        return false;
-    }
-
-    std::string line;
-    while (std::getline(tblFile, line)) {
-        std::string field;
-        for (char c : line) {
-            if (c == '|') {
-                std::cout << field << " | ";
-                field.clear();
-            } else {
-                field += c;
+    if (selectedColumns.empty()) {
+        // SELECT *
+        for (size_t i = 0; i < columns.size(); i++)
+            colIndexes.push_back((int)i);
+    } else {
+        for (const auto& name : selectedColumns) {
+            bool found = false;
+            for (size_t i = 0; i < columns.size(); i++) {
+                if (columns[i].name == name) {
+                    colIndexes.push_back((int)i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                error = "Unknown column '" + name + "'";
+                return false;
             }
         }
-        std::cout << field << "\n";
     }
 
-    tblFile.close();
-    return true;
+    // print header
+    for (size_t i = 0; i < colIndexes.size(); i++) {
+        std::cout << columns[colIndexes[i]].name;
+        if (i + 1 < colIndexes.size()) std::cout << " | ";
+    }
+    std::cout << "\n";
 
+    // print rows
+    std::ifstream tblFile(tblPath);
+    std::string line;
+
+    while (std::getline(tblFile, line)) {
+        std::vector<std::string> fields;
+        std::string temp;
+
+        for (char c : line) {
+            if (c == '|') {
+                fields.push_back(temp);
+                temp.clear();
+            } else {
+                temp += c;
+            }
+        }
+        fields.push_back(temp);
+
+        for (size_t i = 0; i < colIndexes.size(); i++) {
+            int idx = colIndexes[i];
+            if (idx < (int)fields.size())
+                std::cout << fields[idx];
+            if (i + 1 < colIndexes.size()) std::cout << " | ";
+        }
+        std::cout << "\n";
+    }
+
+    return true;
 }
