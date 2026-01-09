@@ -3,7 +3,7 @@
 #include<string>
 #include<vector>
 
-bool selectRows(
+bool selectColumns(
     const std::string& databaseName,
     const std::string& tableName,
     const std::vector<std::string>& selectedColumns,
