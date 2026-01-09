@@ -1,6 +1,7 @@
 #include "parser.h"
 #include <iostream>
 #include <algorithm>
+#include<sstream>
 #include <string>
 
 using namespace std;
@@ -83,19 +84,29 @@ ParsedCommand parseCommand(const string &command)
     {
         result.type = CommandType::SELECT;
 
-        size_t fromPos = cmd.find("FROM") + 5;
-        size_t wherePos = cmd.find("WHERE");
+        size_t fromPos = cmd.find("FROM");
+        if (fromPos == std::string::npos)
+        {
+            return result;
+        }
 
-        if (wherePos == string::npos)
+        // extract column list
+        std::string colPart = command.substr(6, fromPos - 6);
+        colPart = trim(colPart);
+
+        if (colPart != "*")
         {
-            result.tableName = trim(command.substr(fromPos));
+            std::stringstream ss(colPart);
+            std::string col;
+            while (std::getline(ss, col, ','))
+            {
+                result.selectedColumns.push_back(trim(col));
+            }
         }
-        else
-        {
-            result.tableName = trim(command.substr(fromPos,
-                                                   wherePos - fromPos));
-            result.whereClause = trim(command.substr(wherePos + 6));
-        }
+
+        // extract table name
+        size_t tablePos = fromPos + 5;
+        result.tableName = trim(command.substr(tablePos));
     }
 
     // DELETE
