@@ -14,6 +14,13 @@ enum class CommandType{
     UNKNOWN
 };
 
+struct WhereCondition {
+    std::string column;
+    std::string op;     // =, !=, <, >, <=, >=
+    std::string value;
+};
+
+
 struct  ParsedCommand
 {
     CommandType type;
@@ -24,7 +31,11 @@ struct  ParsedCommand
     std::vector<std::string> selectedColumns;
     std::string values; //INSERT
     std::string schema; //CREATE
-    std::string whereClause; //SELECT/DELETE/UPDATE
+    //std::string whereClause; //SELECT/DELETE/UPDATE
+    
+    bool hasWhere = false;
+    WhereCondition where;
+
     std::string setClause; //UPDATE
 };
 
