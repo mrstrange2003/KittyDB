@@ -1,11 +1,14 @@
-#include<fstream>
-#include<iostream>
-#include<vector>
-#include<string>
-#include<sys/stat.h>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sys/stat.h>
+
 #include "select.h"
 #include "schema.h"
+#include "where.h"
 
+// helpers
 static bool directoryExists(const std::string& path){
     struct stat info;
     return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
@@ -13,13 +16,15 @@ static bool directoryExists(const std::string& path){
 
 static bool fileExists(const std::string& path){
     struct stat info;
-    return (stat(path.c_str(), &info)==0);
+    return (stat(path.c_str(), &info) == 0);
 }
 
 bool selectColumns(
     const std::string& databaseName,
     const std::string& tableName,
     const std::vector<std::string>& selectedColumns,
+    bool hasWhere,
+    const WhereCondition& where,
     std::string& error
 ) {
     if (databaseName.empty()) {
@@ -31,18 +36,23 @@ bool selectColumns(
     std::string tblPath  = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
+    if (!directoryExists(basePath)) {
+        error = "Database does not exist";
+        return false;
+    }
+
     if (!fileExists(tblPath) || !fileExists(metaPath)) {
         error = "Table does not exist";
         return false;
     }
 
-    // parse schema
+    // 1️⃣ parse schema
     std::vector<Column> columns;
     if (!parseSchema(metaPath, columns, error)) {
         return false;
     }
 
-    // map selected column names → indexes
+    // 2️⃣ resolve column indexes
     std::vector<int> colIndexes;
 
     if (selectedColumns.empty()) {
@@ -66,18 +76,25 @@ bool selectColumns(
         }
     }
 
-    // print header
+    // 3️⃣ print header
     for (size_t i = 0; i < colIndexes.size(); i++) {
         std::cout << columns[colIndexes[i]].name;
         if (i + 1 < colIndexes.size()) std::cout << " | ";
     }
     std::cout << "\n";
 
-    // print rows
+    // 4️⃣ open table
     std::ifstream tblFile(tblPath);
-    std::string line;
+    if (!tblFile) {
+        error = "Failed to open table data";
+        return false;
+    }
 
+    // 5️⃣ read rows
+    std::string line;
     while (std::getline(tblFile, line)) {
+
+        // split row into fields
         std::vector<std::string> fields;
         std::string temp;
 
@@ -91,6 +108,18 @@ bool selectColumns(
         }
         fields.push_back(temp);
 
+        // ⭐ APPLY WHERE FILTER ⭐
+        if (hasWhere) {
+            if (!evaluateWhere(columns,
+                               fields,
+                               where.column,
+                               where.op,
+                               where.value)) {
+                continue; // skip this row
+            }
+        }
+
+        // 6️⃣ print selected columns
         for (size_t i = 0; i < colIndexes.size(); i++) {
             int idx = colIndexes[i];
             if (idx < (int)fields.size())
@@ -100,5 +129,6 @@ bool selectColumns(
         std::cout << "\n";
     }
 
+    tblFile.close();
     return true;
 }
