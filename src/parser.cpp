@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include<vector>
 
 using namespace std;
 
@@ -140,9 +141,32 @@ ParsedCommand parseCommand(const string &command)
         size_t fromPos = cmd.find("FROM") + 5;
         size_t wherePos = cmd.find("WHERE");
 
-        result.tableName = trim(command.substr(fromPos,
-                                               wherePos - fromPos));
-        // result.whereClause = trim(command.substr(wherePos + 6));
+        if (wherePos == std::string::npos)
+        {
+            result.tableName = trim(command.substr(fromPos));
+            result.hasWhere = false;
+        }
+        else
+        {
+            result.tableName = trim(command.substr(fromPos,
+                                                   wherePos - fromPos));
+
+            result.hasWhere = true;
+            std::string cond = trim(command.substr(wherePos + 6));
+
+            const std::vector<std::string> ops = {"<=", ">=", "!=", "=", "<", ">"};
+            for (const auto &op : ops)
+            {
+                size_t pos = cond.find(op);
+                if (pos != std::string::npos)
+                {
+                    result.where.column = trim(cond.substr(0, pos));
+                    result.where.op = op;
+                    result.where.value = trim(cond.substr(pos + op.size()));
+                    break;
+                }
+            }
+        }
     }
 
     // UPDATE
