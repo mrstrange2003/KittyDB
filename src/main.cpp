@@ -7,6 +7,7 @@
 #include "table.h"
 #include "insert.h"
 #include "select.h"
+#include "delete.h"
 
 using namespace std;
 
@@ -134,16 +135,35 @@ int main()
         }
 
         case CommandType::DELETE_CMD:
-            cout << "DELETE\n";
-            cout << "Table: " << pc.tableName << endl;
-            //cout << "Where: " << pc.whereClause << endl;
+        {
+            if (!pc.hasWhere)
+            {
+                std::cout << "Error: DELETE without WHERE is not allowed.\n";
+                break;
+            }
+
+            std::string error;
+            if (!deleteWhere(
+                    currentDatabase,
+                    pc.tableName,
+                    pc.hasWhere,
+                    pc.where,
+                    error))
+            {
+                std::cout << "Error: " << error << std::endl;
+            }
+            else
+            {
+                std::cout << "Rows deleted successfully.\n";
+            }
             break;
+        }
 
         case CommandType::UPDATE:
             cout << "UPDATE\n";
             cout << "Table: " << pc.tableName << endl;
             cout << "Set: " << pc.setClause << endl;
-            //cout << "Where: " << pc.whereClause << endl;
+            // cout << "Where: " << pc.whereClause << endl;
             break;
 
         default:
