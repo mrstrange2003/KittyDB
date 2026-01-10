@@ -120,10 +120,13 @@ int main()
         case CommandType::SELECT:
         {
             std::string error;
-            if (!selectColumns(currentDatabase,
-                            pc.tableName,
-                            pc.selectedColumns,
-                            error))
+            if (!selectColumns(
+                    currentDatabase,
+                    pc.tableName,
+                    pc.selectedColumns,
+                    pc.hasWhere,
+                    pc.where,
+                    error))
             {
                 std::cout << "Error: " << error << std::endl;
             }
@@ -133,14 +136,14 @@ int main()
         case CommandType::DELETE_CMD:
             cout << "DELETE\n";
             cout << "Table: " << pc.tableName << endl;
-            cout << "Where: " << pc.whereClause << endl;
+            //cout << "Where: " << pc.whereClause << endl;
             break;
 
         case CommandType::UPDATE:
             cout << "UPDATE\n";
             cout << "Table: " << pc.tableName << endl;
             cout << "Set: " << pc.setClause << endl;
-            cout << "Where: " << pc.whereClause << endl;
+            //cout << "Where: " << pc.whereClause << endl;
             break;
 
         default:
