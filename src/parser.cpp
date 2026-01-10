@@ -1,7 +1,7 @@
 #include "parser.h"
 #include <iostream>
 #include <algorithm>
-#include<sstream>
+#include <sstream>
 #include <string>
 
 using namespace std;
@@ -80,20 +80,17 @@ ParsedCommand parseCommand(const string &command)
     }
 
     // SELECT
+    // SELECT
     else if (cmd.rfind("SELECT", 0) == 0)
     {
         result.type = CommandType::SELECT;
 
         size_t fromPos = cmd.find("FROM");
         if (fromPos == std::string::npos)
-        {
             return result;
-        }
 
-        // extract column list
-        std::string colPart = command.substr(6, fromPos - 6);
-        colPart = trim(colPart);
-
+        // columns
+        std::string colPart = trim(command.substr(6, fromPos - 6));
         if (colPart != "*")
         {
             std::stringstream ss(colPart);
@@ -104,9 +101,35 @@ ParsedCommand parseCommand(const string &command)
             }
         }
 
-        // extract table name
-        size_t tablePos = fromPos + 5;
-        result.tableName = trim(command.substr(tablePos));
+        // table + optional WHERE
+        size_t wherePos = cmd.find("WHERE");
+        if (wherePos == std::string::npos)
+        {
+            result.tableName = trim(command.substr(fromPos + 5));
+        }
+        else
+        {
+            result.tableName = trim(command.substr(fromPos + 5,
+                                                   wherePos - (fromPos + 5)));
+
+            result.hasWhere = true;
+
+            std::string cond = trim(command.substr(wherePos + 6));
+
+            // detect operator
+            const std::vector<std::string> ops = {"<=", ">=", "!=", "=", "<", ">"};
+            for (const auto &op : ops)
+            {
+                size_t pos = cond.find(op);
+                if (pos != std::string::npos)
+                {
+                    result.where.column = trim(cond.substr(0, pos));
+                    result.where.op = op;
+                    result.where.value = trim(cond.substr(pos + op.size()));
+                    break;
+                }
+            }
+        }
     }
 
     // DELETE
@@ -119,7 +142,7 @@ ParsedCommand parseCommand(const string &command)
 
         result.tableName = trim(command.substr(fromPos,
                                                wherePos - fromPos));
-        result.whereClause = trim(command.substr(wherePos + 6));
+        // result.whereClause = trim(command.substr(wherePos + 6));
     }
 
     // UPDATE
@@ -133,7 +156,7 @@ ParsedCommand parseCommand(const string &command)
         result.tableName = trim(command.substr(7, setPos - 7));
         result.setClause = trim(command.substr(setPos + 4,
                                                wherePos - setPos - 4));
-        result.whereClause = trim(command.substr(wherePos + 6));
+        // result.whereClause = trim(command.substr(wherePos + 6));
     }
 
     return result;
