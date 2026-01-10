@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
-#include<vector>
+#include <vector>
 
 using namespace std;
 
@@ -170,6 +170,7 @@ ParsedCommand parseCommand(const string &command)
     }
 
     // UPDATE
+    // UPDATE
     else if (cmd.rfind("UPDATE", 0) == 0)
     {
         result.type = CommandType::UPDATE;
@@ -180,7 +181,22 @@ ParsedCommand parseCommand(const string &command)
         result.tableName = trim(command.substr(7, setPos - 7));
         result.setClause = trim(command.substr(setPos + 4,
                                                wherePos - setPos - 4));
-        // result.whereClause = trim(command.substr(wherePos + 6));
+
+        result.hasWhere = true;
+        std::string cond = trim(command.substr(wherePos + 6));
+
+        const std::vector<std::string> ops = {"<=", ">=", "!=", "=", "<", ">"};
+        for (const auto &op : ops)
+        {
+            size_t pos = cond.find(op);
+            if (pos != std::string::npos)
+            {
+                result.where.column = trim(cond.substr(0, pos));
+                result.where.op = op;
+                result.where.value = trim(cond.substr(pos + op.size()));
+                break;
+            }
+        }
     }
 
     return result;
