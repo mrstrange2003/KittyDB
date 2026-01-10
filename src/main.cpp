@@ -8,6 +8,7 @@
 #include "insert.h"
 #include "select.h"
 #include "delete.h"
+#include "update.h"
 
 using namespace std;
 
@@ -160,11 +161,24 @@ int main()
         }
 
         case CommandType::UPDATE:
-            cout << "UPDATE\n";
-            cout << "Table: " << pc.tableName << endl;
-            cout << "Set: " << pc.setClause << endl;
-            // cout << "Where: " << pc.whereClause << endl;
+        {
+            std::string error;
+            if (!updateWhere(
+                    currentDatabase,
+                    pc.tableName,
+                    pc.setClause,
+                    pc.hasWhere,
+                    pc.where,
+                    error))
+            {
+                std::cout << "Error: " << error << std::endl;
+            }
+            else
+            {
+                std::cout << "Rows updated successfully.\n";
+            }
             break;
+        }
 
         default:
             cout << "Unknown command" << endl;
