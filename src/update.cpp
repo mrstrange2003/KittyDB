@@ -1,6 +1,7 @@
 #include "update.h"
 #include "schema.h"
 #include "where.h"
+#include "types.h"
 
 #include <fstream>
 #include <vector>
@@ -8,40 +9,46 @@
 #include <sys/stat.h>
 
 // helpers
-static bool directoryExists(const std::string& path) {
+static bool directoryExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 }
 
-static bool fileExists(const std::string& path) {
+static bool fileExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0);
 }
 
 // split "col=value"
 static bool parseSetClause(
-    const std::string& setClause,
-    std::string& column,
-    std::string& value
-) {
+    const std::string &setClause,
+    std::string &column,
+    std::string &value)
+{
     size_t pos = setClause.find('=');
     if (pos == std::string::npos)
         return false;
 
     column = setClause.substr(0, pos);
-    value  = setClause.substr(pos + 1);
+    value = setClause.substr(pos + 1);
 
     // trim spaces
-    auto trim = [](std::string& s) {
-        while (!s.empty() && s.front() == ' ') s.erase(s.begin());
-        while (!s.empty() && s.back() == ' ') s.pop_back();
+    auto trim = [](std::string &s)
+    {
+        while (!s.empty() && s.front() == ' ')
+            s.erase(s.begin());
+        while (!s.empty() && s.back() == ' ')
+            s.pop_back();
     };
 
     trim(column);
     trim(value);
 
     // remove quotes
-    if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
+    if (value.size() >= 2 && value.front() == '"' && value.back() == '"')
+    {
         value = value.substr(1, value.size() - 2);
     }
 
@@ -49,66 +56,84 @@ static bool parseSetClause(
 }
 
 bool updateWhere(
-    const std::string& databaseName,
-    const std::string& tableName,
-    const std::string& setClause,
+    const std::string &databaseName,
+    const std::string &tableName,
+    const std::string &setClause,
     bool hasWhere,
-    const WhereCondition& where,
-    std::string& error
-) {
-    if (databaseName.empty()) {
+    const WhereCondition &where,
+    std::string &error)
+{
+    if (databaseName.empty())
+    {
         error = "No database selected";
         return false;
     }
 
-    if (!hasWhere) {
+    if (!hasWhere)
+    {
         error = "UPDATE without WHERE is not allowed";
         return false;
     }
 
     std::string basePath = "..\\databases\\" + databaseName + "\\";
-    std::string tblPath  = basePath + tableName + ".tbl";
+    std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
-    if (!directoryExists(basePath)) {
+    if (!directoryExists(basePath))
+    {
         error = "Database does not exist";
         return false;
     }
 
-    if (!fileExists(tblPath) || !fileExists(metaPath)) {
+    if (!fileExists(tblPath) || !fileExists(metaPath))
+    {
         error = "Table does not exist";
         return false;
     }
 
     // parse schema
     std::vector<Column> columns;
-    if (!parseSchema(metaPath, columns, error)) {
+    if (!parseSchema(metaPath, columns, error))
+    {
         return false;
     }
 
     // parse SET clause
     std::string setColumn, setValue;
-    if (!parseSetClause(setClause, setColumn, setValue)) {
+    if (!parseSetClause(setClause, setColumn, setValue))
+    {
         error = "Invalid SET clause";
         return false;
     }
 
     int setIdx = -1;
-    for (size_t i = 0; i < columns.size(); i++) {
-        if (columns[i].name == setColumn) {
+    for (size_t i = 0; i < columns.size(); i++)
+    {
+        if (columns[i].name == setColumn)
+        {
             setIdx = (int)i;
             break;
         }
     }
 
-    if (setIdx == -1) {
+    if (setIdx == -1)
+    {
         error = "Unknown column '" + setColumn + "'";
+        return false;
+    }
+
+    // datatype validation
+    if (!validateValueForType(setValue,columns[setIdx].type))
+    {
+        error = "Invalid value for column '" + columns[setIdx].name +
+                "' of type " + columns[setIdx].type;
         return false;
     }
 
     // read rows
     std::ifstream in(tblPath);
-    if (!in) {
+    if (!in)
+    {
         error = "Failed to open table";
         return false;
     }
@@ -116,15 +141,22 @@ bool updateWhere(
     std::vector<std::string> updatedRows;
     std::string line;
 
-    while (std::getline(in, line)) {
+    int updatedCount = 0;
+
+    while (std::getline(in, line))
+    {
         std::vector<std::string> fields;
         std::string temp;
 
-        for (char c : line) {
-            if (c == '|') {
+        for (char c : line)
+        {
+            if (c == '|')
+            {
                 fields.push_back(temp);
                 temp.clear();
-            } else {
+            }
+            else
+            {
                 temp += c;
             }
         }
@@ -135,16 +167,20 @@ bool updateWhere(
                           fields,
                           where.column,
                           where.op,
-                          where.value)) {
+                          where.value))
+        {
             // update value
-            if (setIdx < (int)fields.size()) {
+            if (setIdx < (int)fields.size())
+            {
                 fields[setIdx] = setValue;
+                updatedCount++;
             }
         }
 
         // rebuild row
         std::string newRow;
-        for (size_t i = 0; i < fields.size(); i++) {
+        for (size_t i = 0; i < fields.size(); i++)
+        {
             newRow += fields[i];
             if (i + 1 < fields.size())
                 newRow += "|";
@@ -154,14 +190,22 @@ bool updateWhere(
     }
     in.close();
 
+    if (updatedCount == 0)
+    {
+        error = "No rows matched WHERE clause";
+        return false;
+    }
+
     // rewrite table
     std::ofstream out(tblPath, std::ios::trunc);
-    if (!out) {
+    if (!out)
+    {
         error = "Failed to rewrite table";
         return false;
     }
 
-    for (const auto& r : updatedRows) {
+    for (const auto &r : updatedRows)
+    {
         out << r << "\n";
     }
     out.close();
