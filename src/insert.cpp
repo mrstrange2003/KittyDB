@@ -1,3 +1,5 @@
+// insert.cpp
+
 #include "insert.h"
 #include "schema.h"
 #include "types.h"
@@ -46,7 +48,7 @@ bool insertRow(
     const std::string &values,
     std::string &error)
 {
-    // 1️⃣ basic checks
+    //  basic checks
     if (databaseName.empty())
     {
         error = "No database selected";
@@ -70,14 +72,14 @@ bool insertRow(
         return false;
     }
 
-    // 2️⃣ parse schema
+    // parse schema
     std::vector<Column> columns;
     if (!parseSchema(metaPath, columns, error))
     {
         return false;
     }
 
-    // 3️⃣ parse VALUES into vector
+    //  parse VALUES into vector
     std::vector<std::string> parsedValues;
     std::string temp;
 
@@ -95,7 +97,7 @@ bool insertRow(
     }
     parsedValues.push_back(cleanValue(temp));
 
-    // 4️⃣ enforce column count
+    //  enforce column count
     if (parsedValues.size() != columns.size())
     {
         error = "Column count mismatch";
@@ -112,7 +114,7 @@ bool insertRow(
         }
     }
 
-    // 5️⃣ build row string (pipe-separated)
+    //  build row string (pipe-separated)
     std::string row;
     for (size_t i = 0; i < parsedValues.size(); i++)
     {
@@ -121,7 +123,7 @@ bool insertRow(
             row += "|";
     }
 
-    // 6️⃣ append to .tbl
+    //  append to .tbl
     std::ofstream tblFile(tblPath, std::ios::app);
     if (!tblFile)
     {
