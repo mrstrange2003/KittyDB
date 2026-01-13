@@ -1,8 +1,10 @@
+// main.cpp
 #include <iostream>
 #include <string>
 #include <algorithm>
 #include <sys/stat.h>
 #include "parser.h"
+#include "where.h"
 #include "db.h"
 #include "table.h"
 #include "insert.h"
@@ -122,15 +124,42 @@ int main()
         case CommandType::SELECT:
         {
             std::string error;
-            if (!selectColumns(
-                    currentDatabase,
-                    pc.tableName,
-                    pc.selectedColumns,
-                    pc.hasWhere,
-                    pc.where,
-                    error))
-            {
-                std::cout << "Error: " << error << std::endl;
+            if (pc.where == nullptr) {
+                WhereCondition emptyWhere;
+                if (!selectColumns(
+                        currentDatabase,
+                        pc.tableName,
+                        pc.selectedColumns,
+                        false,
+                        emptyWhere,
+                        pc.distinct,
+                        pc.hasOrderBy,
+                        pc.orderBy,
+                        pc.hasLimit,
+                        pc.limitCount,
+                        pc.offsetCount,
+                        error))
+                {
+                    std::cout << "Error: " << error << std::endl;
+                }
+            } else {
+                if (!selectColumns(
+                        currentDatabase,
+                        pc.tableName,
+                        pc.selectedColumns,
+                        pc.hasWhere,
+                        *pc.where,
+                        pc.distinct,
+                        pc.hasOrderBy,
+                        pc.orderBy,
+                        pc.hasLimit,
+                        pc.limitCount,
+                        pc.offsetCount,
+                        error))
+                {
+                    std::cout << "Error: " << error << std::endl;
+                }
+                delete pc.where;
             }
             break;
         }
@@ -144,18 +173,21 @@ int main()
             }
 
             std::string error;
-            if (!deleteWhere(
-                    currentDatabase,
-                    pc.tableName,
-                    pc.hasWhere,
-                    pc.where,
-                    error))
-            {
-                std::cout << "Error: " << error << std::endl;
-            }
-            else
-            {
-                std::cout << "Rows deleted successfully.\n";
+            if (pc.where != nullptr) {
+                if (!deleteWhere(
+                        currentDatabase,
+                        pc.tableName,
+                        pc.hasWhere,
+                        *pc.where,
+                        error))
+                {
+                    std::cout << "Error: " << error << std::endl;
+                }
+                else
+                {
+                    std::cout << "Rows deleted successfully.\n";
+                }
+                delete pc.where;
             }
             break;
         }
@@ -163,19 +195,22 @@ int main()
         case CommandType::UPDATE:
         {
             std::string error;
-            if (!updateWhere(
-                    currentDatabase,
-                    pc.tableName,
-                    pc.setClause,
-                    pc.hasWhere,
-                    pc.where,
-                    error))
-            {
-                std::cout << "Error: " << error << std::endl;
-            }
-            else
-            {
-                std::cout << "Rows updated successfully.\n";
+            if (pc.where != nullptr) {
+                if (!updateWhere(
+                        currentDatabase,
+                        pc.tableName,
+                        pc.setClause,
+                        pc.hasWhere,
+                        *pc.where,
+                        error))
+                {
+                    std::cout << "Error: " << error << std::endl;
+                }
+                else
+                {
+                    std::cout << "Rows updated successfully.\n";
+                }
+                delete pc.where;
             }
             break;
         }
