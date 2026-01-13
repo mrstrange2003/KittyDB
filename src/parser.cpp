@@ -1,3 +1,5 @@
+// parser.cpp
+
 #include "parser.h"
 #include <iostream>
 #include <algorithm>
@@ -8,9 +10,7 @@
 
 using namespace std;
 
-// trim spaces
-static string trim(string s)
-{
+static string trim(string s) {
     while (!s.empty() && s.front() == ' ')
         s.erase(s.begin());
     while (!s.empty() && s.back() == ' ')
@@ -18,27 +18,109 @@ static string trim(string s)
     return s;
 }
 
-// helper
-static std::string stripQuotes(std::string v)
-{
+static std::string stripQuotes(std::string v) {
     if (v.size() >= 2 && v.front() == '"' && v.back() == '"')
         return v.substr(1, v.size() - 2);
     return v;
 }
 
-ParsedCommand parseCommand(const string &command)
-{
+// Parse complex WHERE clause with AND/OR
+static WhereCondition parseWhereClause(const std::string& whereStr) {
+    WhereCondition result;
+    
+    // Split by AND/OR (case insensitive)
+    std::string upper = whereStr;
+    std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+    
+    std::vector<std::string> parts;
+    std::vector<std::string> ops;
+    
+    size_t lastPos = 0;
+    size_t pos = 0;
+    
+    while (pos < upper.size()) {
+        // Look for AND or OR
+        if (upper.substr(pos, 4) == " AND") {
+            parts.push_back(whereStr.substr(lastPos, pos - lastPos));
+            ops.push_back("AND");
+            lastPos = pos + 5;
+            pos = lastPos;
+        } else if (upper.substr(pos, 3) == " OR") {
+            parts.push_back(whereStr.substr(lastPos, pos - lastPos));
+            ops.push_back("OR");
+            lastPos = pos + 4;
+            pos = lastPos;
+        } else {
+            pos++;
+        }
+    }
+    parts.push_back(whereStr.substr(lastPos));
+    
+    // Parse each condition
+    for (const auto& part : parts) {
+        std::string cond = trim(part);
+        SimpleCondition sc;
+        
+        // Try operators in order of length (longest first to avoid substring issues)
+        const std::vector<std::string> opList = {"<=", ">=", "!=", "LIKE", "BETWEEN", "IN", "=", "<", ">"};
+        
+        bool found = false;
+        for (const auto& op : opList) {
+            std::string upperCond = cond;
+            std::transform(upperCond.begin(), upperCond.end(), upperCond.begin(), ::toupper);
+            
+            size_t pos = upperCond.find(op);
+            if (pos != std::string::npos) {
+                sc.column = trim(cond.substr(0, pos));
+                sc.op = op;
+                
+                std::string remainder = trim(cond.substr(pos + op.size()));
+                
+                // Handle BETWEEN: "col BETWEEN val1 AND val2"
+                if (op == "BETWEEN") {
+                    std::string upperRem = remainder;
+                    std::transform(upperRem.begin(), upperRem.end(), upperRem.begin(), ::toupper);
+                    size_t andPos = upperRem.find(" AND");
+                    
+                    if (andPos != std::string::npos) {
+                        sc.value = stripQuotes(trim(remainder.substr(0, andPos)));
+                        sc.value2 = stripQuotes(trim(remainder.substr(andPos + 5)));
+                        found = true;
+                        break;
+                    }
+                }
+                // Handle IN: "col IN ('val1', 'val2', ...)"
+                else if (op == "IN") {
+                    if (remainder.front() == '(' && remainder.back() == ')') {
+                        sc.value = remainder.substr(1, remainder.size() - 2);
+                        found = true;
+                        break;
+                    }
+                }
+                else {
+                    sc.value = stripQuotes(trim(remainder));
+                    found = true;
+                    break;
+                }
+            }
+        }
+        
+        if (found) {
+            result.conditions.push_back(sc);
+        }
+    }
+    
+    result.logicalOps = ops;
+    return result;
+}
 
+ParsedCommand parseCommand(const string &command) {
     std::string cleaned = command;
 
-    // trim leading/trailing spaces
     while (!cleaned.empty() && isspace(cleaned.front()))
         cleaned.erase(cleaned.begin());
-
     while (!cleaned.empty() && isspace(cleaned.back()))
         cleaned.pop_back();
-
-    // remove trailing semicolon(s)
     while (!cleaned.empty() && cleaned.back() == ';')
         cleaned.pop_back();
 
@@ -49,180 +131,170 @@ ParsedCommand parseCommand(const string &command)
     transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
 
     // CREATE DATABASE
-    if (cmd.rfind("CREATE DATABASE", 0) == 0)
-    {
+    if (cmd.rfind("CREATE DATABASE", 0) == 0) {
         result.type = CommandType::CREATE_DATABASE;
-
         size_t namePos = cmd.find("DATABASE") + 9;
         result.databaseName = trim(cleaned.substr(namePos));
-
         return result;
     }
-
+    
     // USE DATABASE
-    else if (cmd.rfind("USE", 0) == 0)
-    {
+    else if (cmd.rfind("USE", 0) == 0) {
         result.type = CommandType::USE_DATABASE;
-
-        size_t namePos = 4; // after "USE "
+        size_t namePos = 4;
         result.databaseName = trim(cleaned.substr(namePos));
-
         return result;
     }
-
+    
     // CREATE TABLE
-    else if (cmd.rfind("CREATE TABLE", 0) == 0)
-    {
+    else if (cmd.rfind("CREATE TABLE", 0) == 0) {
         result.type = CommandType::CREATE;
-
         size_t tablePos = cmd.find("TABLE") + 6;
         size_t parenPos = cleaned.find('(', tablePos);
-
         result.tableName = trim(cleaned.substr(tablePos, parenPos - tablePos));
-
         size_t closeParen = cleaned.find(')', parenPos);
-        result.schema = cleaned.substr(parenPos + 1,
-                                       closeParen - parenPos - 1);
+        result.schema = cleaned.substr(parenPos + 1, closeParen - parenPos - 1);
     }
-
+    
     // INSERT
-    else if (cmd.rfind("INSERT INTO", 0) == 0)
-    {
+    else if (cmd.rfind("INSERT INTO", 0) == 0) {
         result.type = CommandType::INSERT;
-
         size_t intoPos = cmd.find("INTO") + 5;
         size_t valuesPos = cmd.find("VALUES");
-
-        result.tableName = trim(cleaned.substr(intoPos,
-                                               valuesPos - intoPos));
-
+        result.tableName = trim(cleaned.substr(intoPos, valuesPos - intoPos));
         size_t openParen = cleaned.find('(', valuesPos);
         size_t closeParen = cleaned.find(')', openParen);
-
-        result.values = cleaned.substr(openParen + 1,
-                                       closeParen - openParen - 1);
+        result.values = cleaned.substr(openParen + 1, closeParen - openParen - 1);
     }
-
+    
     // SELECT
-    // SELECT
-    else if (cmd.rfind("SELECT", 0) == 0)
-    {
+    else if (cmd.rfind("SELECT", 0) == 0) {
         result.type = CommandType::SELECT;
+
+        // Check for DISTINCT
+        size_t selectPos = 6;
+        std::string afterSelect = trim(cleaned.substr(selectPos));
+        std::string afterSelectUpper = afterSelect;
+        std::transform(afterSelectUpper.begin(), afterSelectUpper.end(), 
+                      afterSelectUpper.begin(), ::toupper);
+        
+        if (afterSelectUpper.rfind("DISTINCT", 0) == 0) {
+            result.distinct = true;
+            selectPos = cleaned.find("DISTINCT") + 8;
+            afterSelect = trim(cleaned.substr(selectPos));
+        }
 
         size_t fromPos = cmd.find("FROM");
         if (fromPos == std::string::npos)
             return result;
 
-        // columns
-        std::string colPart = trim(cleaned.substr(6, fromPos - 6));
-        if (colPart != "*")
-        {
+        // Parse columns
+        std::string colPart = trim(cleaned.substr(selectPos, fromPos - selectPos));
+        if (colPart != "*") {
             std::stringstream ss(colPart);
             std::string col;
-            while (std::getline(ss, col, ','))
-            {
+            while (std::getline(ss, col, ',')) {
                 result.selectedColumns.push_back(trim(col));
             }
         }
 
-        // table + optional WHERE
+        // Find WHERE, ORDER BY, LIMIT
         size_t wherePos = cmd.find("WHERE");
-        if (wherePos == std::string::npos)
-        {
+        size_t orderPos = cmd.find("ORDER BY");
+        size_t limitPos = cmd.find("LIMIT");
+
+        // Extract table name
+        if (wherePos == std::string::npos && orderPos == std::string::npos && limitPos == std::string::npos) {
             result.tableName = trim(cleaned.substr(fromPos + 5));
+        } else {
+            size_t endOfTable = std::string::npos;
+            if (wherePos != std::string::npos) endOfTable = std::min(endOfTable, wherePos);
+            if (orderPos != std::string::npos) endOfTable = std::min(endOfTable, orderPos);
+            if (limitPos != std::string::npos) endOfTable = std::min(endOfTable, limitPos);
+            
+            if (endOfTable == std::string::npos) {
+                result.tableName = trim(cleaned.substr(fromPos + 5));
+            } else {
+                result.tableName = trim(cleaned.substr(fromPos + 5, endOfTable - (fromPos + 5)));
+            }
         }
-        else
-        {
-            result.tableName = trim(cleaned.substr(fromPos + 5,
-                                                   wherePos - (fromPos + 5)));
 
+        // Parse WHERE
+        if (wherePos != std::string::npos) {
             result.hasWhere = true;
+            size_t whereEndPos = (orderPos != std::string::npos) ? orderPos : 
+                                 (limitPos != std::string::npos) ? limitPos : cleaned.size();
+            std::string whereClause = trim(cleaned.substr(wherePos + 6, whereEndPos - (wherePos + 6)));
+            result.where = parseWhereClause(whereClause);
+        }
 
-            std::string cond = trim(cleaned.substr(wherePos + 6));
+        // Parse ORDER BY
+        if (orderPos != std::string::npos) {
+            result.hasOrderBy = true;
+            size_t orderEndPos = (limitPos != std::string::npos) ? limitPos : cleaned.size();
+            std::string orderClause = trim(cleaned.substr(orderPos + 8, orderEndPos - (orderPos + 8)));
+            
+            // Check for ASC/DESC
+            std::string orderUpper = orderClause;
+            std::transform(orderUpper.begin(), orderUpper.end(), orderUpper.begin(), ::toupper);
+            
+            if (orderUpper.rfind(" DESC") != std::string::npos) {
+                result.orderBy.column = trim(orderClause.substr(0, orderClause.rfind("DESC")));
+                result.orderBy.ascending = false;
+            } else if (orderUpper.rfind(" ASC") != std::string::npos) {
+                result.orderBy.column = trim(orderClause.substr(0, orderClause.rfind("ASC")));
+                result.orderBy.ascending = true;
+            } else {
+                result.orderBy.column = trim(orderClause);
+                result.orderBy.ascending = true;
+            }
+        }
 
-            // detect operator
-            const std::vector<std::string> ops = {"<=", ">=", "!=", "=", "<", ">"};
-            for (const auto &op : ops)
-            {
-                size_t pos = cond.find(op);
-                if (pos != std::string::npos)
-                {
-                    result.where.column = trim(cond.substr(0, pos));
-                    result.where.op = op;
-                    result.where.value = stripQuotes(
-                        trim(cond.substr(pos + op.size())));
-                    break;
-                }
+        // Parse LIMIT
+        if (limitPos != std::string::npos) {
+            result.hasLimit = true;
+            std::string limitClause = trim(cleaned.substr(limitPos + 5));
+            
+            size_t offsetKeywordPos = limitClause.find("OFFSET");
+            if (offsetKeywordPos != std::string::npos) {
+                result.limitCount = std::stoi(trim(limitClause.substr(0, offsetKeywordPos)));
+                result.offsetCount = std::stoi(trim(limitClause.substr(offsetKeywordPos + 6)));
+            } else {
+                result.limitCount = std::stoi(trim(limitClause));
+                result.offsetCount = 0;
             }
         }
     }
-
+    
     // DELETE
-    else if (cmd.rfind("DELETE FROM", 0) == 0)
-    {
+    else if (cmd.rfind("DELETE FROM", 0) == 0) {
         result.type = CommandType::DELETE_CMD;
-
         size_t fromPos = cmd.find("FROM") + 5;
         size_t wherePos = cmd.find("WHERE");
 
-        if (wherePos == std::string::npos)
-        {
+        if (wherePos == std::string::npos) {
             result.tableName = trim(cleaned.substr(fromPos));
             result.hasWhere = false;
-        }
-        else
-        {
-            result.tableName = trim(cleaned.substr(fromPos,
-                                                   wherePos - fromPos));
-
+        } else {
+            result.tableName = trim(cleaned.substr(fromPos, wherePos - fromPos));
             result.hasWhere = true;
             std::string cond = trim(cleaned.substr(wherePos + 6));
-
-            const std::vector<std::string> ops = {"<=", ">=", "!=", "=", "<", ">"};
-            for (const auto &op : ops)
-            {
-                size_t pos = cond.find(op);
-                if (pos != std::string::npos)
-                {
-                    result.where.column = trim(cond.substr(0, pos));
-                    result.where.op = op;
-                    result.where.value = stripQuotes(
-                        trim(cond.substr(pos + op.size())));
-                    break;
-                }
-            }
+            result.where = parseWhereClause(cond);
         }
     }
-
+    
     // UPDATE
-    // UPDATE
-    else if (cmd.rfind("UPDATE", 0) == 0)
-    {
+    else if (cmd.rfind("UPDATE", 0) == 0) {
         result.type = CommandType::UPDATE;
-
         size_t setPos = cmd.find("SET");
         size_t wherePos = cmd.find("WHERE");
 
         result.tableName = trim(cleaned.substr(7, setPos - 7));
-        result.setClause = trim(cleaned.substr(setPos + 4,
-                                               wherePos - setPos - 4));
+        result.setClause = trim(cleaned.substr(setPos + 4, wherePos - setPos - 4));
 
         result.hasWhere = true;
         std::string cond = trim(cleaned.substr(wherePos + 6));
-
-        const std::vector<std::string> ops = {"<=", ">=", "!=", "=", "<", ">"};
-        for (const auto &op : ops)
-        {
-            size_t pos = cond.find(op);
-            if (pos != std::string::npos)
-            {
-                result.where.column = trim(cond.substr(0, pos));
-                result.where.op = op;
-                result.where.value = stripQuotes(
-                    trim(cond.substr(pos + op.size())));
-                break;
-            }
-        }
+        result.where = parseWhereClause(cond);
     }
 
     return result;
