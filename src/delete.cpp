@@ -1,3 +1,5 @@
+// delete.cpp
+
 #include "delete.h"
 #include "schema.h"
 #include "where.h"
@@ -77,11 +79,7 @@ bool deleteWhere(
 
         // apply WHERE
         if (hasWhere) {
-            if (evaluateWhere(columns,
-                              fields,
-                              where.column,
-                              where.op,
-                              where.value)) {
+            if (evaluateWhere(columns, fields, where)) {
                 // row matches WHERE → delete it
                 continue;
             }
