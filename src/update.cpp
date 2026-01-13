@@ -1,3 +1,5 @@
+// update.cpp
+
 #include "update.h"
 #include "schema.h"
 #include "where.h"
@@ -123,7 +125,7 @@ bool updateWhere(
     }
 
     // datatype validation
-    if (!validateValueForType(setValue,columns[setIdx].type))
+    if (!validateValueForType(setValue, columns[setIdx].type))
     {
         error = "Invalid value for column '" + columns[setIdx].name +
                 "' of type " + columns[setIdx].type;
@@ -163,11 +165,7 @@ bool updateWhere(
         fields.push_back(temp);
 
         // apply WHERE
-        if (evaluateWhere(columns,
-                          fields,
-                          where.column,
-                          where.op,
-                          where.value))
+        if (evaluateWhere(columns, fields, where))
         {
             // update value
             if (setIdx < (int)fields.size())
