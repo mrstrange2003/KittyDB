@@ -1,3 +1,4 @@
+// parser.h
 #ifndef PARSER_H
 #define PARSER_H
 #include<string>
@@ -14,27 +15,46 @@ enum class CommandType{
     UNKNOWN
 };
 
-struct WhereCondition {
+// Represents a single condition (column op value)
+struct SimpleCondition {
     std::string column;
-    std::string op;     // =, !=, <, >, <=, >=
-    std::string value;
+    std::string op;     // =, !=, <, >, <=, >=, LIKE, BETWEEN, IN
+    std::string value;  // value or "val1,val2" for IN
+    std::string value2; // for BETWEEN (end value)
 };
 
+// Represents AND/OR combinations
+struct WhereCondition {
+    std::vector<SimpleCondition> conditions;
+    std::vector<std::string> logicalOps; // "AND" or "OR" between conditions
+};
 
-struct  ParsedCommand
-{
+struct OrderByClause {
+    std::string column;
+    bool ascending = true; // true = ASC, false = DESC
+};
+
+struct ParsedCommand {
     CommandType type;
 
     std::string databaseName;
     std::string tableName;
 
     std::vector<std::string> selectedColumns;
+    bool distinct = false;
+    
     std::string values; //INSERT
     std::string schema; //CREATE
-    //std::string whereClause; //SELECT/DELETE/UPDATE
     
     bool hasWhere = false;
     WhereCondition where;
+
+    bool hasOrderBy = false;
+    OrderByClause orderBy;
+
+    bool hasLimit = false;
+    int limitCount = 0;
+    int offsetCount = 0;
 
     std::string setClause; //UPDATE
 };
