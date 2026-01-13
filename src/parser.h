@@ -15,23 +15,13 @@ enum class CommandType{
     UNKNOWN
 };
 
-// Represents a single condition (column op value)
-struct SimpleCondition {
-    std::string column;
-    std::string op;     // =, !=, <, >, <=, >=, LIKE, BETWEEN, IN
-    std::string value;  // value or "val1,val2" for IN
-    std::string value2; // for BETWEEN (end value)
-};
-
-// Represents AND/OR combinations
-struct WhereCondition {
-    std::vector<SimpleCondition> conditions;
-    std::vector<std::string> logicalOps; // "AND" or "OR" between conditions
-};
+// Forward declare structures from where.h
+struct SimpleCondition;
+struct WhereCondition;
 
 struct OrderByClause {
     std::string column;
-    bool ascending = true; // true = ASC, false = DESC
+    bool ascending = true;
 };
 
 struct ParsedCommand {
@@ -43,11 +33,11 @@ struct ParsedCommand {
     std::vector<std::string> selectedColumns;
     bool distinct = false;
     
-    std::string values; //INSERT
-    std::string schema; //CREATE
+    std::string values;
+    std::string schema;
     
     bool hasWhere = false;
-    WhereCondition where;
+    WhereCondition* where = nullptr;
 
     bool hasOrderBy = false;
     OrderByClause orderBy;
@@ -56,7 +46,7 @@ struct ParsedCommand {
     int limitCount = 0;
     int offsetCount = 0;
 
-    std::string setClause; //UPDATE
+    std::string setClause;
 };
 
 ParsedCommand parseCommand(const std::string& command);
