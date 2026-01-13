@@ -1,3 +1,5 @@
+// schema.cpp
+
 #include "schema.h"
 #include <fstream>
 #include <sstream>
@@ -48,7 +50,7 @@ bool parseSchema(
 
         Column c;
         c.name = colName;
-        c.type = toUpper(colType); // 🔒 enforce uppercase
+        c.type = toUpper(colType); // enforce uppercase
 
         columns.push_back(c);
     }
