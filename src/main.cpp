@@ -1,10 +1,10 @@
-// main.cpp
 #include <iostream>
 #include <string>
 #include <algorithm>
 #include <sys/stat.h>
 #include "parser.h"
 #include "where.h"
+#include "aggregate.h"
 #include "db.h"
 #include "table.h"
 #include "insert.h"
@@ -138,6 +138,8 @@ int main()
                         pc.hasLimit,
                         pc.limitCount,
                         pc.offsetCount,
+                        pc.hasAggregates,
+                        pc.aggregateFunctions,
                         error))
                 {
                     std::cout << "Error: " << error << std::endl;
@@ -155,6 +157,8 @@ int main()
                         pc.hasLimit,
                         pc.limitCount,
                         pc.offsetCount,
+                        pc.hasAggregates,
+                        pc.aggregateFunctions,
                         error))
                 {
                     std::cout << "Error: " << error << std::endl;
