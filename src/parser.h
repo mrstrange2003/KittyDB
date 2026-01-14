@@ -19,6 +19,9 @@ enum class CommandType{
 struct SimpleCondition;
 struct WhereCondition;
 
+// We need to include aggregate.h for AggregateFunction
+#include "aggregate.h"
+
 struct OrderByClause {
     std::string column;
     bool ascending = true;
@@ -31,6 +34,8 @@ struct ParsedCommand {
     std::string tableName;
 
     std::vector<std::string> selectedColumns;
+    std::vector<AggregateFunction> aggregateFunctions;
+    bool hasAggregates = false;
     bool distinct = false;
     
     std::string values;
