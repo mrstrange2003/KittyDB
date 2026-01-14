@@ -6,6 +6,7 @@
 #include <vector>
 #include "parser.h"
 #include "where.h"
+#include "aggregate.h"
 
 bool selectColumns(
     const std::string& databaseName,
@@ -19,6 +20,8 @@ bool selectColumns(
     bool hasLimit,
     int limitCount,
     int offsetCount,
+    bool hasAggregates,
+    const std::vector<AggregateFunction>& aggregates,
     std::string& error
 );
 
