@@ -25,6 +25,78 @@ static std::string stripQuotes(std::string v) {
     return v;
 }
 
+// Parse aggregate functions from column specification
+static void parseAggregates(const std::string& colPart, std::vector<std::string>& columns, std::vector<AggregateFunction>& aggregates) {
+    std::stringstream ss(colPart);
+    std::string token;
+    
+    while (std::getline(ss, token, ',')) {
+        token = trim(token);
+        std::string upper = token;
+        std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+        
+        // Check for COUNT(...)
+        if (upper.rfind("COUNT(", 0) == 0) {
+            size_t closePos = token.find(')');
+            if (closePos != std::string::npos) {
+                std::string colName = trim(token.substr(6, closePos - 6));
+                AggregateFunction agg;
+                agg.type = (AggregateType)1; // COUNT
+                agg.column = colName;
+                aggregates.push_back(agg);
+            }
+        }
+        // Check for SUM(...)
+        else if (upper.rfind("SUM(", 0) == 0) {
+            size_t closePos = token.find(')');
+            if (closePos != std::string::npos) {
+                std::string colName = trim(token.substr(4, closePos - 4));
+                AggregateFunction agg;
+                agg.type = (AggregateType)2; // SUM
+                agg.column = colName;
+                aggregates.push_back(agg);
+            }
+        }
+        // Check for AVG(...)
+        else if (upper.rfind("AVG(", 0) == 0) {
+            size_t closePos = token.find(')');
+            if (closePos != std::string::npos) {
+                std::string colName = trim(token.substr(4, closePos - 4));
+                AggregateFunction agg;
+                agg.type = (AggregateType)3; // AVG
+                agg.column = colName;
+                aggregates.push_back(agg);
+            }
+        }
+        // Check for MIN(...)
+        else if (upper.rfind("MIN(", 0) == 0) {
+            size_t closePos = token.find(')');
+            if (closePos != std::string::npos) {
+                std::string colName = trim(token.substr(4, closePos - 4));
+                AggregateFunction agg;
+                agg.type = (AggregateType)4; // MIN
+                agg.column = colName;
+                aggregates.push_back(agg);
+            }
+        }
+        // Check for MAX(...)
+        else if (upper.rfind("MAX(", 0) == 0) {
+            size_t closePos = token.find(')');
+            if (closePos != std::string::npos) {
+                std::string colName = trim(token.substr(4, closePos - 4));
+                AggregateFunction agg;
+                agg.type = (AggregateType)5; // MAX
+                agg.column = colName;
+                aggregates.push_back(agg);
+            }
+        }
+        else {
+            // Regular column
+            columns.push_back(token);
+        }
+    }
+}
+
 // Parse complex WHERE clause with AND/OR
 static WhereCondition* parseWhereClause(const std::string& whereStr) {
     WhereCondition* result = new WhereCondition();
@@ -200,10 +272,23 @@ ParsedCommand parseCommand(const string &command) {
         // Parse columns (between SELECT/DISTINCT and FROM)
         std::string colPart = trim(cleaned.substr(selectPos, fromPos - selectPos));
         if (colPart != "*") {
-            std::stringstream ss(colPart);
-            std::string col;
-            while (std::getline(ss, col, ',')) {
-                result.selectedColumns.push_back(trim(col));
+            // Check if there are aggregate functions
+            std::string upperColPart = colPart;
+            std::transform(upperColPart.begin(), upperColPart.end(), upperColPart.begin(), ::toupper);
+            
+            if (upperColPart.find("COUNT(") != std::string::npos ||
+                upperColPart.find("SUM(") != std::string::npos ||
+                upperColPart.find("AVG(") != std::string::npos ||
+                upperColPart.find("MIN(") != std::string::npos ||
+                upperColPart.find("MAX(") != std::string::npos) {
+                result.hasAggregates = true;
+                parseAggregates(colPart, result.selectedColumns, result.aggregateFunctions);
+            } else {
+                std::stringstream ss(colPart);
+                std::string col;
+                while (std::getline(ss, col, ',')) {
+                    result.selectedColumns.push_back(trim(col));
+                }
             }
         }
 
