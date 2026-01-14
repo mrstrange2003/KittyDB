@@ -75,6 +75,8 @@ bool selectColumns(
     bool hasLimit,
     int limitCount,
     int offsetCount,
+    bool hasAggregates,
+    const std::vector<AggregateFunction>& aggregates,
     std::string& error
 ) {
     if (databaseName.empty()) {
@@ -188,11 +190,59 @@ bool selectColumns(
 
     tblFile.close();
 
-    //  Apply ORDER BY
-    if (hasOrderBy) {
+    //  Apply ORDER BY (before aggregates, only for non-aggregate queries)
+    if (hasOrderBy && !hasAggregates) {
         RowComparator comp{orderByColIdx, orderBy.ascending, orderByColType};
         std::sort(filteredRows.begin(), filteredRows.end(), comp);
     }
+    if (hasAggregates) {
+        // Print headers
+        for (size_t i = 0; i < aggregates.size(); i++) {
+            std::string label;
+            switch (aggregates[i].type) {
+                case AggregateType::COUNT:
+                    label = "COUNT(" + aggregates[i].column + ")";
+                    break;
+                case AggregateType::SUM:
+                    label = "SUM(" + aggregates[i].column + ")";
+                    break;
+                case AggregateType::AVG:
+                    label = "AVG(" + aggregates[i].column + ")";
+                    break;
+                case AggregateType::MIN:
+                    label = "MIN(" + aggregates[i].column + ")";
+                    break;
+                case AggregateType::MAX:
+                    label = "MAX(" + aggregates[i].column + ")";
+                    break;
+                default:
+                    label = "?";
+            }
+            std::cout << label;
+            if (i + 1 < aggregates.size()) std::cout << " | ";
+        }
+        std::cout << "\n";
+
+        // Evaluate aggregates
+        std::vector<std::string> aggResults;
+        evaluateAggregate(columns, filteredRows, aggregates, aggResults);
+
+        // Print results
+        for (size_t i = 0; i < aggResults.size(); i++) {
+            std::cout << aggResults[i];
+            if (i + 1 < aggResults.size()) std::cout << " | ";
+        }
+        std::cout << "\n";
+
+        return true;
+    }
+
+    //  print header (regular SELECT)
+    for (size_t i = 0; i < colIndexes.size(); i++) {
+        std::cout << columns[colIndexes[i]].name;
+        if (i + 1 < colIndexes.size()) std::cout << " | ";
+    }
+    std::cout << "\n";
 
     //  Apply DISTINCT
     if (distinct) {
