@@ -10,51 +10,59 @@
 #include <sys/stat.h>
 
 // helpers
-static bool directoryExists(const std::string& path) {
+static bool directoryExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 }
 
-static bool fileExists(const std::string& path) {
+static bool fileExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0);
 }
 
 bool deleteWhere(
-    const std::string& databaseName,
-    const std::string& tableName,
+    const std::string &databaseName,
+    const std::string &tableName,
     bool hasWhere,
-    const WhereCondition& where,
-    std::string& error
-) {
-    if (databaseName.empty()) {
+    const WhereCondition &where,
+    std::string &error)
+{
+
+    if (databaseName.empty())
+    {
         error = "No database selected";
         return false;
     }
 
     std::string basePath = "..\\databases\\" + databaseName + "\\";
-    std::string tblPath  = basePath + tableName + ".tbl";
+    std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
-    if (!directoryExists(basePath)) {
+    if (!directoryExists(basePath))
+    {
         error = "Database does not exist";
         return false;
     }
 
-    if (!fileExists(tblPath) || !fileExists(metaPath)) {
+    if (!fileExists(tblPath) || !fileExists(metaPath))
+    {
         error = "Table does not exist";
         return false;
     }
 
     // parse schema
     std::vector<Column> columns;
-    if (!parseSchema(metaPath, columns, error)) {
+    if (!parseSchema(metaPath, columns, error))
+    {
         return false;
     }
 
     // read all rows
     std::ifstream in(tblPath);
-    if (!in) {
+    if (!in)
+    {
         error = "Failed to open table";
         return false;
     }
@@ -62,25 +70,34 @@ bool deleteWhere(
     std::vector<std::string> keptRows;
     std::string line;
 
-    while (std::getline(in, line)) {
+    int deletedCount = 0;
+
+    while (std::getline(in, line))
+    {
         // split row into fields
         std::vector<std::string> fields;
         std::string temp;
 
-        for (char c : line) {
-            if (c == '|') {
+        for (char c : line)
+        {
+            if (c == '|')
+            {
                 fields.push_back(temp);
                 temp.clear();
-            } else {
+            }
+            else
+            {
                 temp += c;
             }
         }
         fields.push_back(temp);
 
         // apply WHERE
-        if (hasWhere) {
-            if (evaluateWhere(columns, fields, where)) {
-                // row matches WHERE → delete it
+        if (hasWhere)
+        {
+            if (evaluateWhere(columns, fields, where))
+            {
+                deletedCount++;
                 continue;
             }
         }
@@ -90,17 +107,27 @@ bool deleteWhere(
     }
     in.close();
 
+    if (deletedCount == 0)
+    {
+        error = "No rows matched WHERE clause";
+        return false;
+    }
+
     // rewrite table file
     std::ofstream out(tblPath, std::ios::trunc);
-    if (!out) {
+    if (!out)
+    {
         error = "Failed to rewrite table";
         return false;
     }
 
-    for (const auto& r : keptRows) {
+    for (const auto &r : keptRows)
+    {
         out << r << "\n";
     }
     out.close();
+
+    
 
     return true;
 }
