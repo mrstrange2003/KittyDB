@@ -42,6 +42,10 @@ bool validateValueForType(
     const std::string& value,
     const std::string& type
 ) {
+    // NULL is allowed for all types
+    if (value == "NULL")
+        return true;
+        
     if (type == "INT")
         return isInt(value);
 
