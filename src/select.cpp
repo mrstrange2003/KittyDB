@@ -145,13 +145,6 @@ bool selectColumns(
         }
     }
 
-    //  print header
-    for (size_t i = 0; i < colIndexes.size(); i++) {
-        std::cout << columns[colIndexes[i]].name;
-        if (i + 1 < colIndexes.size()) std::cout << " | ";
-    }
-    std::cout << "\n";
-
     //  open table
     std::ifstream tblFile(tblPath);
     if (!tblFile) {
