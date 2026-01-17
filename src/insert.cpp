@@ -9,8 +9,7 @@
 #include <vector>
 #include <sys/stat.h>
 
-// ---------- helpers ----------
-
+// helpers
 // check directory exists
 static bool directoryExists(const std::string &path)
 {
@@ -40,7 +39,7 @@ static std::string cleanValue(std::string v)
     return v;
 }
 
-// ---------- main logic ----------
+// main logic 
 
 bool insertRow(
     const std::string &databaseName,
