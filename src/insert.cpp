@@ -10,6 +10,40 @@
 #include <sys/stat.h>
 
 // helpers
+
+static int getNextId(
+    const std::string &databaseName,
+    const std::string &tableName,
+    std::string &error)
+{
+    std::string path = "..\\databases\\" + databaseName + "\\" + tableName + ".seq";
+
+    std::ifstream in(path);
+    if (!in)
+    {
+        error = "Failed to read sequence file";
+        return -1;
+    }
+
+    int lastId = 0;
+    in >> lastId;
+    in.close();
+
+    int nextId = lastId + 1;
+
+    std::ofstream out(path, std::ios::trunc);
+    if (!out)
+    {
+        error = "Failed to update sequence file";
+        return -1;
+    }
+
+    out << nextId;
+    out.close();
+
+    return nextId;
+}
+
 // check directory exists
 static bool directoryExists(const std::string &path)
 {
@@ -39,7 +73,7 @@ static std::string cleanValue(std::string v)
     return v;
 }
 
-// main logic 
+// main logic
 
 bool insertRow(
     const std::string &databaseName,
@@ -47,7 +81,7 @@ bool insertRow(
     const std::string &values,
     std::string &error)
 {
-    //  basic checks
+    // basic checks
     if (databaseName.empty())
     {
         error = "No database selected";
@@ -78,34 +112,35 @@ bool insertRow(
         return false;
     }
 
-    //  parse VALUES into vector
+    // parse VALUES
     std::vector<std::string> parsedValues;
     std::string temp;
 
-    for (size_t i = 0; i < values.size(); i++)
+    for (char c : values)
     {
-        if (values[i] == ',')
+        if (c == ',')
         {
             parsedValues.push_back(cleanValue(temp));
             temp.clear();
         }
         else
         {
-            temp += values[i];
+            temp += c;
         }
     }
     parsedValues.push_back(cleanValue(temp));
 
-    //  enforce column count
-    if (parsedValues.size() != columns.size())
+    // user provides values for all columns EXCEPT __id
+    if (parsedValues.size() != columns.size() - 1)
     {
         error = "Column count mismatch";
         return false;
     }
 
-    for (size_t i = 0; i < columns.size(); i++)
+    // validate only user columns
+    for (size_t i = 1; i < columns.size(); i++)
     {
-        if (!validateValueForType(parsedValues[i], columns[i].type))
+        if (!validateValueForType(parsedValues[i - 1], columns[i].type))
         {
             error = "Type mismatch for column '" + columns[i].name +
                     "' (expected " + columns[i].type + ")";
@@ -113,16 +148,24 @@ bool insertRow(
         }
     }
 
-    //  build row string (pipe-separated)
-    std::string row;
+    // get auto-increment id
+    int id = getNextId(databaseName, tableName, error);
+    if (id == -1)
+    {
+        return false;
+    }
+
+    // build row string
+    std::string row = std::to_string(id) + "|";
+
     for (size_t i = 0; i < parsedValues.size(); i++)
     {
         row += parsedValues[i];
-        if (i != parsedValues.size() - 1)
+        if (i + 1 < parsedValues.size())
             row += "|";
     }
 
-    //  append to .tbl
+    // append to table
     std::ofstream tblFile(tblPath, std::ios::app);
     if (!tblFile)
     {
