@@ -44,7 +44,7 @@ bool createTable(
 
     std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
-    std::string idxPath = basePath + tableName + ".idx"; 
+    std::string idxPath = basePath + tableName + ".idx";
 
     // Check if table already exists
     if (fileExists(metaPath))
@@ -80,6 +80,17 @@ bool createTable(
         return false;
     }
     idxFile.close();
+
+    // Create .seq file (auto-increment ID starts from 1)
+    std::string seqPath = basePath + tableName + ".seq";
+    std::ofstream seqFile(seqPath);
+    if (!seqFile)
+    {
+        error = "Failed to create sequence file";
+        return false;
+    }
+    seqFile << "0";
+    seqFile.close();
 
     return true;
 }
