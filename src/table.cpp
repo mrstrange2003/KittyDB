@@ -7,6 +7,45 @@
 #include <string>
 #include <sys/stat.h>
 
+
+#include <windows.h>
+
+bool showTables(
+    const std::string& databaseName,
+    std::string& error)
+{
+    if (databaseName.empty()) {
+        error = "No database selected";
+        return false;
+    }
+
+    std::string searchPath =
+        "..\\databases\\" + databaseName + "\\*.meta";
+
+    WIN32_FIND_DATAA findData;
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        std::cout << "Tables in " << databaseName << "\n";
+        std::cout << "----------------\n";
+        std::cout << "(no tables)\n";
+        return true;
+    }
+
+    std::cout << "Tables in " << databaseName << "\n";
+    std::cout << "----------------\n";
+
+    do {
+        std::string fileName = findData.cFileName;
+        // remove ".meta"
+        std::cout << fileName.substr(0, fileName.size() - 5) << "\n";
+    } while (FindNextFileA(hFind, &findData));
+
+    FindClose(hFind);
+    return true;
+}
+
+
 bool describeTable(
     const std::string& databaseName,
     const std::string& tableName,
