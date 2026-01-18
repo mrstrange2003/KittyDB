@@ -121,10 +121,21 @@ int main()
             break;
         }
 
+        case CommandType::DESCRIBE:
+        {
+            std::string error;
+            if (!describeTable(currentDatabase, pc.tableName, error))
+            {
+                std::cout << "Error: " << error << "\n";
+            }
+            break;
+        }
+
         case CommandType::SELECT:
         {
             std::string error;
-            if (pc.where == nullptr) {
+            if (pc.where == nullptr)
+            {
                 WhereCondition emptyWhere;
                 if (!selectColumns(
                         currentDatabase,
@@ -144,7 +155,9 @@ int main()
                 {
                     std::cout << "Error: " << error << std::endl;
                 }
-            } else {
+            }
+            else
+            {
                 if (!selectColumns(
                         currentDatabase,
                         pc.tableName,
@@ -177,7 +190,8 @@ int main()
             }
 
             std::string error;
-            if (pc.where != nullptr) {
+            if (pc.where != nullptr)
+            {
                 if (!deleteWhere(
                         currentDatabase,
                         pc.tableName,
@@ -199,7 +213,8 @@ int main()
         case CommandType::UPDATE:
         {
             std::string error;
-            if (pc.where != nullptr) {
+            if (pc.where != nullptr)
+            {
                 if (!updateWhere(
                         currentDatabase,
                         pc.tableName,
