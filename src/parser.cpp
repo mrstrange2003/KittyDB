@@ -322,6 +322,14 @@ ParsedCommand parseCommand(const string &command)
         return result;
     }
 
+    // TRUNCATE TABLE
+    else if (cmd.rfind("TRUNCATE", 0) == 0)
+    {
+        result.type = CommandType::TRUNCATE;
+        result.tableName = trim(cleaned.substr(8));
+        return result;
+    }
+
     // SELECT
     else if (cmd.rfind("SELECT", 0) == 0)
     {
