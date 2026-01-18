@@ -13,57 +13,75 @@
 #include "where.h"
 
 // helpers
-static bool directoryExists(const std::string& path) {
+static bool directoryExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 }
 
-static bool fileExists(const std::string& path) {
+static bool fileExists(const std::string &path)
+{
     struct stat info;
     return (stat(path.c_str(), &info) == 0);
 }
 
 // Comparator for sorting rows (STRICT WEAK ORDERING SAFE)
-struct RowComparator {
+struct RowComparator
+{
     int colIdx;
     bool ascending;
     std::string colType;
 
-    bool operator()(const std::vector<std::string>& a,
-                    const std::vector<std::string>& b) const {
+    bool operator()(const std::vector<std::string> &a,
+                    const std::vector<std::string> &b) const
+    {
 
         bool aValid = colIdx >= 0 && colIdx < (int)a.size();
         bool bValid = colIdx >= 0 && colIdx < (int)b.size();
 
         // Handle missing values deterministically
-        if (!aValid && !bValid) return false; // equal
-        if (!aValid) return false;            // a > b
-        if (!bValid) return true;             // a < b
+        if (!aValid && !bValid)
+            return false; // equal
+        if (!aValid)
+            return false; // a > b
+        if (!bValid)
+            return true; // a < b
 
-        const std::string& aVal = a[colIdx];
-        const std::string& bVal = b[colIdx];
+        const std::string &aVal = a[colIdx];
+        const std::string &bVal = b[colIdx];
 
         int cmp = 0;
 
-        if (colType == "INT") {
-            try {
+        if (colType == "INT")
+        {
+            try
+            {
                 int ai = std::stoi(aVal);
                 int bi = std::stoi(bVal);
-                cmp = (ai < bi) ? -1 : (ai > bi) ? 1 : 0;
-            } catch (...) {
+                cmp = (ai < bi) ? -1 : (ai > bi) ? 1
+                                                 : 0;
+            }
+            catch (...)
+            {
                 cmp = aVal.compare(bVal);
             }
         }
-        else if (colType == "FLOAT") {
-            try {
+        else if (colType == "FLOAT")
+        {
+            try
+            {
                 double af = std::stod(aVal);
                 double bf = std::stod(bVal);
-                cmp = (af < bf) ? -1 : (af > bf) ? 1 : 0;
-            } catch (...) {
+                cmp = (af < bf) ? -1 : (af > bf) ? 1
+                                                 : 0;
+            }
+            catch (...)
+            {
                 cmp = aVal.compare(bVal);
             }
         }
-        else {
+        else
+        {
             cmp = aVal.compare(bVal);
         }
 
@@ -72,63 +90,78 @@ struct RowComparator {
 };
 
 bool selectColumns(
-    const std::string& databaseName,
-    const std::string& tableName,
-    const std::vector<std::string>& selectedColumns,
+    const std::string &databaseName,
+    const std::string &tableName,
+    const std::vector<std::string> &selectedColumns,
     bool hasWhere,
-    const WhereCondition& where,
+    const WhereCondition &where,
     bool distinct,
     bool hasOrderBy,
-    const OrderByClause& orderBy,
+    const OrderByClause &orderBy,
     bool hasLimit,
     int limitCount,
     int offsetCount,
     bool hasAggregates,
-    const std::vector<AggregateFunction>& aggregates,
-    std::string& error
-) {
-    if (databaseName.empty()) {
+    const std::vector<AggregateFunction> &aggregates,
+    std::string &error)
+{
+    if (databaseName.empty())
+    {
         error = "No database selected";
         return false;
     }
 
     std::string basePath = "..\\databases\\" + databaseName + "\\";
-    std::string tblPath  = basePath + tableName + ".tbl";
+    std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
-    if (!directoryExists(basePath)) {
+    if (!directoryExists(basePath))
+    {
         error = "Database does not exist";
         return false;
     }
 
-    if (!fileExists(tblPath) || !fileExists(metaPath)) {
+    if (!fileExists(tblPath) || !fileExists(metaPath))
+    {
         error = "Table does not exist";
         return false;
     }
 
     // parse schema
     std::vector<Column> columns;
-    if (!parseSchema(metaPath, columns, error)) {
+    if (!parseSchema(metaPath, columns, error))
+    {
         return false;
     }
 
     // resolve selected column indexes
     std::vector<int> colIndexes;
 
-    if (selectedColumns.empty()) {
+    if (selectedColumns.empty())
+    {
         for (size_t i = 0; i < columns.size(); i++)
+        {
+            if (columns[i].name == "__id")
+                continue;
             colIndexes.push_back((int)i);
-    } else {
-        for (const auto& name : selectedColumns) {
+        }
+    }
+    else
+    {
+        for (const auto &name : selectedColumns)
+        {
             bool found = false;
-            for (size_t i = 0; i < columns.size(); i++) {
-                if (columns[i].name == name) {
+            for (size_t i = 0; i < columns.size(); i++)
+            {
+                if (columns[i].name == name)
+                {
                     colIndexes.push_back((int)i);
                     found = true;
                     break;
                 }
             }
-            if (!found) {
+            if (!found)
+            {
                 error = "Unknown column '" + name + "'";
                 return false;
             }
@@ -139,15 +172,19 @@ bool selectColumns(
     int orderByColIdx = -1;
     std::string orderByColType = "TEXT";
 
-    if (hasOrderBy) {
-        for (size_t i = 0; i < columns.size(); i++) {
-            if (columns[i].name == orderBy.column) {
+    if (hasOrderBy)
+    {
+        for (size_t i = 0; i < columns.size(); i++)
+        {
+            if (columns[i].name == orderBy.column)
+            {
                 orderByColIdx = (int)i;
                 orderByColType = columns[i].type;
                 break;
             }
         }
-        if (orderByColIdx == -1) {
+        if (orderByColIdx == -1)
+        {
             error = "Unknown column '" + orderBy.column + "' in ORDER BY";
             return false;
         }
@@ -155,7 +192,8 @@ bool selectColumns(
 
     // open table
     std::ifstream tblFile(tblPath);
-    if (!tblFile) {
+    if (!tblFile)
+    {
         error = "Failed to open table data";
         return false;
     }
@@ -164,15 +202,20 @@ bool selectColumns(
     std::vector<std::vector<std::string>> filteredRows;
     std::string line;
 
-    while (std::getline(tblFile, line)) {
+    while (std::getline(tblFile, line))
+    {
         std::vector<std::string> fields;
         std::string temp;
 
-        for (char c : line) {
-            if (c == '|') {
+        for (char c : line)
+        {
+            if (c == '|')
+            {
                 fields.push_back(temp);
                 temp.clear();
-            } else {
+            }
+            else
+            {
                 temp += c;
             }
         }
@@ -187,34 +230,52 @@ bool selectColumns(
     tblFile.close();
 
     // ORDER BY (non-aggregate only)
-    if (hasOrderBy && !hasAggregates) {
+    if (hasOrderBy && !hasAggregates)
+    {
         RowComparator comp{orderByColIdx, orderBy.ascending, orderByColType};
         std::sort(filteredRows.begin(), filteredRows.end(), comp);
     }
 
     // AGGREGATE path
-    if (hasAggregates) {
-        for (size_t i = 0; i < aggregates.size(); i++) {
+    if (hasAggregates)
+    {
+        for (size_t i = 0; i < aggregates.size(); i++)
+        {
             std::string label;
-            switch (aggregates[i].type) {
-                case AggregateType::COUNT: label = "COUNT(" + aggregates[i].column + ")"; break;
-                case AggregateType::SUM:   label = "SUM("   + aggregates[i].column + ")"; break;
-                case AggregateType::AVG:   label = "AVG("   + aggregates[i].column + ")"; break;
-                case AggregateType::MIN:   label = "MIN("   + aggregates[i].column + ")"; break;
-                case AggregateType::MAX:   label = "MAX("   + aggregates[i].column + ")"; break;
-                default: label = "?";
+            switch (aggregates[i].type)
+            {
+            case AggregateType::COUNT:
+                label = "COUNT(" + aggregates[i].column + ")";
+                break;
+            case AggregateType::SUM:
+                label = "SUM(" + aggregates[i].column + ")";
+                break;
+            case AggregateType::AVG:
+                label = "AVG(" + aggregates[i].column + ")";
+                break;
+            case AggregateType::MIN:
+                label = "MIN(" + aggregates[i].column + ")";
+                break;
+            case AggregateType::MAX:
+                label = "MAX(" + aggregates[i].column + ")";
+                break;
+            default:
+                label = "?";
             }
             std::cout << label;
-            if (i + 1 < aggregates.size()) std::cout << " | ";
+            if (i + 1 < aggregates.size())
+                std::cout << " | ";
         }
         std::cout << "\n";
 
         std::vector<std::string> aggResults;
         evaluateAggregate(columns, filteredRows, aggregates, aggResults);
 
-        for (size_t i = 0; i < aggResults.size(); i++) {
+        for (size_t i = 0; i < aggResults.size(); i++)
+        {
             std::cout << aggResults[i];
-            if (i + 1 < aggResults.size()) std::cout << " | ";
+            if (i + 1 < aggResults.size())
+                std::cout << " | ";
         }
         std::cout << "\n";
 
@@ -222,18 +283,22 @@ bool selectColumns(
     }
 
     // print header (regular SELECT)
-    for (size_t i = 0; i < colIndexes.size(); i++) {
+    for (size_t i = 0; i < colIndexes.size(); i++)
+    {
         std::cout << columns[colIndexes[i]].name;
-        if (i + 1 < colIndexes.size()) std::cout << " | ";
+        if (i + 1 < colIndexes.size())
+            std::cout << " | ";
     }
     std::cout << "\n";
 
     // DISTINCT
-    if (distinct) {
+    if (distinct)
+    {
         std::set<std::vector<std::string>> seen;
         std::vector<std::vector<std::string>> uniqueRows;
 
-        for (const auto& row : filteredRows) {
+        for (const auto &row : filteredRows)
+        {
             std::vector<std::string> key;
             for (int idx : colIndexes)
                 if (idx < (int)row.size())
@@ -253,15 +318,19 @@ bool selectColumns(
     if (hasLimit)
         endIdx = std::min(endIdx, startIdx + limitCount);
 
-    for (int i = startIdx; i < endIdx; i++) {
-        if (i < 0) continue;
-        const auto& row = filteredRows[i];
+    for (int i = startIdx; i < endIdx; i++)
+    {
+        if (i < 0)
+            continue;
+        const auto &row = filteredRows[i];
 
-        for (size_t j = 0; j < colIndexes.size(); j++) {
+        for (size_t j = 0; j < colIndexes.size(); j++)
+        {
             int idx = colIndexes[j];
             if (idx < (int)row.size())
                 std::cout << row[idx];
-            if (j + 1 < colIndexes.size()) std::cout << " | ";
+            if (j + 1 < colIndexes.size())
+                std::cout << " | ";
         }
         std::cout << "\n";
     }
