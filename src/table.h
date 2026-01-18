@@ -16,5 +16,11 @@ bool describeTable(
     std::string& error
 );
 
+bool showTables(
+    const std::string& databaseName,
+    std::string& error
+);
+
+
 
 #endif
