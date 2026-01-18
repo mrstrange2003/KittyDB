@@ -21,6 +21,10 @@ bool showTables(
     std::string& error
 );
 
-
+bool truncateTable(
+    const std::string& databaseName,
+    const std::string& tableName,
+    std::string& error
+);
 
 #endif
