@@ -1,7 +1,39 @@
 #include "table.h"
+#include "schema.h"
+
+#include<iostream>
+#include<vector>
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
+
+bool describeTable(
+    const std::string& databaseName,
+    const std::string& tableName,
+    std::string& error)
+{
+    if (databaseName.empty()) {
+        error = "No database selected";
+        return false;
+    }
+
+    std::string metaPath =
+        "..\\databases\\" + databaseName + "\\" + tableName + ".meta";
+
+    std::vector<Column> columns;
+    if (!parseSchema(metaPath, columns, error)) {
+        return false;
+    }
+
+    std::cout << "Column | Type\n";
+    std::cout << "--------------\n";
+
+    for (const auto& col : columns) {
+        std::cout << col.name << " | " << col.type << "\n";
+    }
+
+    return true;
+}
 
 static bool directoryExists(const std::string &path)
 {
