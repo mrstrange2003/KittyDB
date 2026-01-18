@@ -1,78 +1,13 @@
 #include "table.h"
 #include "schema.h"
 
-#include<iostream>
-#include<vector>
+#include <iostream>
+#include <vector>
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
 
-
 #include <windows.h>
-
-bool showTables(
-    const std::string& databaseName,
-    std::string& error)
-{
-    if (databaseName.empty()) {
-        error = "No database selected";
-        return false;
-    }
-
-    std::string searchPath =
-        "..\\databases\\" + databaseName + "\\*.meta";
-
-    WIN32_FIND_DATAA findData;
-    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
-
-    if (hFind == INVALID_HANDLE_VALUE) {
-        std::cout << "Tables in " << databaseName << "\n";
-        std::cout << "----------------\n";
-        std::cout << "(no tables)\n";
-        return true;
-    }
-
-    std::cout << "Tables in " << databaseName << "\n";
-    std::cout << "----------------\n";
-
-    do {
-        std::string fileName = findData.cFileName;
-        // remove ".meta"
-        std::cout << fileName.substr(0, fileName.size() - 5) << "\n";
-    } while (FindNextFileA(hFind, &findData));
-
-    FindClose(hFind);
-    return true;
-}
-
-
-bool describeTable(
-    const std::string& databaseName,
-    const std::string& tableName,
-    std::string& error)
-{
-    if (databaseName.empty()) {
-        error = "No database selected";
-        return false;
-    }
-
-    std::string metaPath =
-        "..\\databases\\" + databaseName + "\\" + tableName + ".meta";
-
-    std::vector<Column> columns;
-    if (!parseSchema(metaPath, columns, error)) {
-        return false;
-    }
-
-    std::cout << "Column | Type\n";
-    std::cout << "--------------\n";
-
-    for (const auto& col : columns) {
-        std::cout << col.name << " | " << col.type << "\n";
-    }
-
-    return true;
-}
 
 static bool directoryExists(const std::string &path)
 {
@@ -85,6 +20,118 @@ static bool fileExists(const std::string &path)
 {
     struct stat info;
     return (stat(path.c_str(), &info) == 0);
+}
+
+bool truncateTable(
+    const std::string &databaseName,
+    const std::string &tableName,
+    std::string &error)
+{
+    if (databaseName.empty())
+    {
+        error = "No database selected";
+        return false;
+    }
+
+    std::string basePath = "..\\databases\\" + databaseName + "\\";
+    std::string tblPath = basePath + tableName + ".tbl";
+    std::string seqPath = basePath + tableName + ".seq";
+    std::string metaPath = basePath + tableName + ".meta";
+
+    // table must exist
+    if (!fileExists(metaPath))
+    {
+        error = "Table does not exist";
+        return false;
+    }
+
+    // clear table data
+    std::ofstream tblFile(tblPath, std::ios::trunc);
+    if (!tblFile)
+    {
+        error = "Failed to truncate table";
+        return false;
+    }
+    tblFile.close();
+
+    // reset auto-increment
+    std::ofstream seqFile(seqPath, std::ios::trunc);
+    if (seqFile)
+    {
+        seqFile << "0";
+        seqFile.close();
+    }
+
+    return true;
+}
+
+bool showTables(
+    const std::string &databaseName,
+    std::string &error)
+{
+    if (databaseName.empty())
+    {
+        error = "No database selected";
+        return false;
+    }
+
+    std::string searchPath =
+        "..\\databases\\" + databaseName + "\\*.meta";
+
+    WIN32_FIND_DATAA findData;
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
+
+    if (hFind == INVALID_HANDLE_VALUE)
+    {
+        std::cout << "Tables in " << databaseName << "\n";
+        std::cout << "----------------\n";
+        std::cout << "(no tables)\n";
+        return true;
+    }
+
+    std::cout << "Tables in " << databaseName << "\n";
+    std::cout << "----------------\n";
+
+    do
+    {
+        std::string fileName = findData.cFileName;
+        // remove ".meta"
+        std::cout << fileName.substr(0, fileName.size() - 5) << "\n";
+    } while (FindNextFileA(hFind, &findData));
+
+    FindClose(hFind);
+    return true;
+}
+
+bool describeTable(
+    const std::string &databaseName,
+    const std::string &tableName,
+    std::string &error)
+{
+    if (databaseName.empty())
+    {
+        error = "No database selected";
+        return false;
+    }
+
+    std::string metaPath =
+        "..\\databases\\" + databaseName + "\\" + tableName + ".meta";
+
+    std::vector<Column> columns;
+    if (!parseSchema(metaPath, columns, error))
+    {
+        return false;
+    }
+
+    std::cout << "Column | Type\n";
+    std::cout << "--------------\n";
+
+    for (const auto &col : columns)
+    {
+        std::cout << col.name << " | " << col.type << "\n";
+    }
+
+    return true;
 }
 
 bool createTable(
