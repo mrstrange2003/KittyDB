@@ -169,7 +169,7 @@ static WhereCondition *parseWhereClause(const std::string &whereStr)
         SimpleCondition sc;
 
         // NULL checks
-        std::string upperCond = cond; 
+        std::string upperCond = cond;
         std::transform(upperCond.begin(), upperCond.end(), upperCond.begin(), ::toupper);
 
         if (upperCond.find(" IS NOT NULL") != std::string::npos)
@@ -305,6 +305,14 @@ ParsedCommand parseCommand(const string &command)
         size_t openParen = cleaned.find('(', valuesPos);
         size_t closeParen = cleaned.find(')', openParen);
         result.values = cleaned.substr(openParen + 1, closeParen - openParen - 1);
+    }
+
+    // DESCRIBE TABLE
+    else if (cmd.rfind("DESCRIBE", 0) == 0)
+    {
+        result.type = CommandType::DESCRIBE;
+        result.tableName = trim(cleaned.substr(8));
+        return result;
     }
 
     // SELECT
