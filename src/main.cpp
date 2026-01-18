@@ -131,6 +131,16 @@ int main()
             break;
         }
 
+        case CommandType::SHOW_TABLES:
+        {
+            std::string error;
+            if (!showTables(currentDatabase, error))
+            {
+                std::cout << "Error: " << error << "\n";
+            }
+            break;
+        }
+
         case CommandType::SELECT:
         {
             std::string error;
