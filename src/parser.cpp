@@ -315,6 +315,13 @@ ParsedCommand parseCommand(const string &command)
         return result;
     }
 
+    // SHOW TABLES
+    else if (cmd == "SHOW TABLES")
+    {
+        result.type = CommandType::SHOW_TABLES;
+        return result;
+    }
+
     // SELECT
     else if (cmd.rfind("SELECT", 0) == 0)
     {
