@@ -14,6 +14,7 @@ enum class CommandType{
     UPDATE,
     DESCRIBE,
     SHOW_TABLES,
+    TRUNCATE,
     UNKNOWN
 };
 
