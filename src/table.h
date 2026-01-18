@@ -10,4 +10,11 @@ bool createTable(
     std::string& error 
 );
 
+bool describeTable(
+    const std::string& databaseName,
+    const std::string& tableName,
+    std::string& error
+);
+
+
 #endif
