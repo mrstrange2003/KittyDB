@@ -141,6 +141,20 @@ int main()
             break;
         }
 
+        case CommandType::TRUNCATE:
+        {
+            std::string error;
+            if (!truncateTable(currentDatabase, pc.tableName, error))
+            {
+                std::cout << "Error: " << error << "\n";
+            }
+            else
+            {
+                std::cout << "Table '" << pc.tableName << "' truncated.\n";
+            }
+            break;
+        }
+
         case CommandType::SELECT:
         {
             std::string error;
