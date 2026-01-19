@@ -23,38 +23,63 @@ static bool fileExists(const std::string &path)
     return (stat(path.c_str(), &info) == 0);
 }
 
-// split "col=value"
+// trim helper
+static std::string trim(std::string s)
+{
+    while (!s.empty() && s.front() == ' ')
+        s.erase(s.begin());
+    while (!s.empty() && s.back() == ' ')
+        s.pop_back();
+    return s;
+}
+
+// remove quotes
+static std::string stripQuotes(std::string v)
+{
+    if (v.size() >= 2 && v.front() == '"' && v.back() == '"')
+        return v.substr(1, v.size() - 2);
+    return v;
+}
+
+// parse SET clause: col1=val1, col2=val2
 static bool parseSetClause(
     const std::string &setClause,
-    std::string &column,
-    std::string &value)
+    std::vector<std::pair<std::string, std::string>> &assignments)
 {
-    size_t pos = setClause.find('=');
-    if (pos == std::string::npos)
-        return false;
+    std::string temp;
 
-    column = setClause.substr(0, pos);
-    value = setClause.substr(pos + 1);
-
-    // trim spaces
-    auto trim = [](std::string &s)
+    for (char c : setClause)
     {
-        while (!s.empty() && s.front() == ' ')
-            s.erase(s.begin());
-        while (!s.empty() && s.back() == ' ')
-            s.pop_back();
-    };
+        if (c == ',')
+        {
+            size_t eq = temp.find('=');
+            if (eq == std::string::npos)
+                return false;
 
-    trim(column);
-    trim(value);
+            std::string col = trim(temp.substr(0, eq));
+            std::string val = stripQuotes(trim(temp.substr(eq + 1)));
 
-    // remove quotes
-    if (value.size() >= 2 && value.front() == '"' && value.back() == '"')
-    {
-        value = value.substr(1, value.size() - 2);
+            assignments.push_back({col, val});
+            temp.clear();
+        }
+        else
+        {
+            temp += c;
+        }
     }
 
-    return true;
+    if (!temp.empty())
+    {
+        size_t eq = temp.find('=');
+        if (eq == std::string::npos)
+            return false;
+
+        std::string col = trim(temp.substr(0, eq));
+        std::string val = stripQuotes(trim(temp.substr(eq + 1)));
+        assignments.push_back({col, val});
+    }
+
+    return !assignments.empty();
 }
 
 bool updateWhere(
@@ -101,35 +126,40 @@ bool updateWhere(
     }
 
     // parse SET clause
-    std::string setColumn, setValue;
-    if (!parseSetClause(setClause, setColumn, setValue))
+    std::vector<std::pair<std::string, std::string>> assignments;
+    if (!parseSetClause(setClause, assignments))
     {
         error = "Invalid SET clause";
         return false;
     }
 
-    int setIdx = -1;
-    for (size_t i = 0; i < columns.size(); i++)
+    // map assignments to column indexes
+    std::vector<std::pair<int, std::string>> updates;
+    for (const auto &a : assignments)
     {
-        if (columns[i].name == setColumn)
+        int idx = -1;
+        for (size_t i = 0; i < columns.size(); i++)
         {
-            setIdx = (int)i;
-            break;
+            if (columns[i].name == a.first)
+            {
+                idx = (int)i;
+                break;
+            }
         }
-    }
 
-    if (setIdx == -1)
-    {
-        error = "Unknown column '" + setColumn + "'";
-        return false;
-    }
+        if (idx == -1)
+        {
+            error = "Unknown column '" + a.first + "'";
+            return false;
+        }
 
-    // datatype validation
-    if (!validateValueForType(setValue, columns[setIdx].type))
-    {
-        error = "Invalid value for column '" + columns[setIdx].name +
-                "' of type " + columns[setIdx].type;
-        return false;
+        if (!validateValueForType(a.second, columns[idx].type))
+        {
+            error = "Invalid value for column '" + columns[idx].name + "'";
+            return false;
+        }
+
+        updates.push_back({idx, a.second});
     }
 
     // read rows
@@ -142,7 +172,6 @@ bool updateWhere(
 
     std::vector<std::string> updatedRows;
     std::string line;
-
     int updatedCount = 0;
 
     while (std::getline(in, line))
@@ -164,18 +193,16 @@ bool updateWhere(
         }
         fields.push_back(temp);
 
-        // apply WHERE
         if (evaluateWhere(columns, fields, where))
         {
-            // update value
-            if (setIdx < (int)fields.size())
+            for (const auto &u : updates)
             {
-                fields[setIdx] = setValue;
-                updatedCount++;
+                if (u.first < (int)fields.size())
+                    fields[u.first] = u.second;
             }
+            updatedCount++;
         }
 
-        // rebuild row
         std::string newRow;
         for (size_t i = 0; i < fields.size(); i++)
         {
@@ -203,10 +230,8 @@ bool updateWhere(
     }
 
     for (const auto &r : updatedRows)
-    {
         out << r << "\n";
-    }
-    out.close();
 
+    out.close();
     return true;
 }
