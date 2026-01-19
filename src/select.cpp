@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <set>
 #include <algorithm>
+#include <iomanip>
 
 #include "select.h"
 #include "schema.h"
@@ -236,6 +237,32 @@ bool selectColumns(
         std::sort(filteredRows.begin(), filteredRows.end(), comp);
     }
 
+    // DISTINCT (after ORDER BY, before LIMIT)
+    if (distinct)
+    {
+        std::set<std::vector<std::string>> seen;
+        std::vector<std::vector<std::string>> uniqueRows;
+
+        for (const auto &row : filteredRows)
+        {
+            std::vector<std::string> key;
+            for (int idx : colIndexes)
+            {
+                if (idx < (int)row.size())
+                    key.push_back(row[idx]);
+                else
+                    key.push_back("");
+            }
+
+            if (seen.insert(key).second)
+            {
+                uniqueRows.push_back(row);
+            }
+        }
+
+        filteredRows = uniqueRows;
+    }
+
     // AGGREGATE path
     if (hasAggregates)
     {
@@ -282,58 +309,96 @@ bool selectColumns(
         return true;
     }
 
-    // print header (regular SELECT)
-    for (size_t i = 0; i < colIndexes.size(); i++)
-    {
-        std::cout << columns[colIndexes[i]].name;
-        if (i + 1 < colIndexes.size())
-            std::cout << " | ";
-    }
-    std::cout << "\n";
-
-    // DISTINCT
-    if (distinct)
-    {
-        std::set<std::vector<std::string>> seen;
-        std::vector<std::vector<std::string>> uniqueRows;
-
-        for (const auto &row : filteredRows)
-        {
-            std::vector<std::string> key;
-            for (int idx : colIndexes)
-                if (idx < (int)row.size())
-                    key.push_back(row[idx]);
-
-            if (seen.insert(key).second)
-                uniqueRows.push_back(row);
-        }
-
-        filteredRows = uniqueRows;
-    }
-
-    // LIMIT / OFFSET
+    // LIMIT / OFFSET  <-- ADD HERE
     int startIdx = offsetCount;
     int endIdx = (int)filteredRows.size();
 
     if (hasLimit)
+    {
         endIdx = std::min(endIdx, startIdx + limitCount);
+    }
 
+    // Pretty table printing
+
+    // collect rows to print
+    std::vector<std::vector<std::string>> outputRows;
     for (int i = startIdx; i < endIdx; i++)
     {
         if (i < 0)
             continue;
-        const auto &row = filteredRows[i];
-
-        for (size_t j = 0; j < colIndexes.size(); j++)
+        std::vector<std::string> row;
+        for (int idx : colIndexes)
         {
-            int idx = colIndexes[j];
-            if (idx < (int)row.size())
-                std::cout << row[idx];
-            if (j + 1 < colIndexes.size())
-                std::cout << " | ";
+            if (idx < (int)filteredRows[i].size())
+                row.push_back(filteredRows[i][idx]);
+            else
+                row.push_back("");
+        }
+        outputRows.push_back(row);
+    }
+
+    // compute column widths
+    std::vector<size_t> colWidths(colIndexes.size(), 0);
+
+    // header widths
+    for (size_t i = 0; i < colIndexes.size(); i++)
+    {
+        colWidths[i] = columns[colIndexes[i]].name.size();
+    }
+
+    // data widths
+    for (const auto &row : outputRows)
+    {
+        for (size_t i = 0; i < row.size(); i++)
+        {
+            colWidths[i] = std::max(colWidths[i], row[i].size());
+        }
+    }
+
+    // helper to print border
+    auto printBorder = [&]()
+    {
+        std::cout << "+";
+        for (size_t w : colWidths)
+        {
+            std::cout << std::string(w + 2, '-') << "+";
+        }
+        std::cout << "\n";
+    };
+
+    // top border
+    printBorder();
+
+    // header row
+    std::cout << "|";
+    for (size_t i = 0; i < colIndexes.size(); i++)
+    {
+        std::cout << " "
+                  << std::left << std::setw(colWidths[i])
+                  << columns[colIndexes[i]].name
+                  << " |";
+    }
+    std::cout << "\n";
+
+    // header separator
+    printBorder();
+
+    // data rows
+    for (const auto &row : outputRows)
+    {
+        std::cout << "|";
+        for (size_t i = 0; i < row.size(); i++)
+        {
+            std::cout << " "
+                      << std::left << std::setw(colWidths[i])
+                      << row[i]
+                      << " |";
         }
         std::cout << "\n";
     }
+
+    // bottom border
+    printBorder();
 
     return true;
 }
