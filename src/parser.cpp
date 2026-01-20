@@ -336,7 +336,7 @@ ParsedCommand parseCommand(const string &command)
         result.type = CommandType::SELECT;
 
         // Check for DISTINCT (right after SELECT keyword)
-        size_t selectPos = 6;
+        size_t selectPos = cleaned.find("SELECT") + 6;
         std::string afterSelect = trim(cleaned.substr(selectPos));
         std::string afterSelectUpper = afterSelect;
         std::transform(afterSelectUpper.begin(), afterSelectUpper.end(),
@@ -345,7 +345,7 @@ ParsedCommand parseCommand(const string &command)
         if (afterSelectUpper.rfind("DISTINCT", 0) == 0)
         {
             result.distinct = true;
-            selectPos = cleaned.find("DISTINCT") + 8;
+            selectPos = cleaned.find("DISTINCT", selectPos) + 9;
         }
 
         size_t fromPos = cmd.find("FROM");
