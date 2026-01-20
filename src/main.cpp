@@ -23,6 +23,7 @@ bool directoryExists(const string &path)
 int main()
 {
     cout << "Welcome to KittyDB" << endl;
+    cout << "Type 'help' to show supported commands" << endl;
     cout << "Type 'exit' to quit" << endl;
 
     string currentDatabase = "";
@@ -44,6 +45,43 @@ int main()
         if (cmdUpper == "EXIT")
         {
             break;
+        }
+
+        if (cmdUpper == "HELP")
+        {
+            std::cout << "\n=== KittyDB Help ===\n\n";
+
+            std::cout << "Database commands:\n";
+            std::cout << "  CREATE DATABASE <name>\n";
+            std::cout << "  USE <database>\n\n";
+
+            std::cout << "Table commands:\n";
+            std::cout << "  CREATE TABLE <table> (col TYPE, ...)\n";
+            std::cout << "  SHOW TABLES\n";
+            std::cout << "  DESCRIBE <table>\n";
+            std::cout << "  TRUNCATE <table>\n\n";
+
+            std::cout << "Data commands:\n";
+            std::cout << "  INSERT INTO <table> VALUES (v1, v2, ...)\n";
+            std::cout << "  SELECT [DISTINCT] <cols> FROM <table>\n";
+            std::cout << "         [WHERE condition]\n";
+            std::cout << "         [ORDER BY col ASC|DESC]\n";
+            std::cout << "         [LIMIT n OFFSET m]\n\n";
+
+            std::cout << "  UPDATE <table> SET col=value [, col=value]\n";
+            std::cout << "         WHERE condition\n";
+            std::cout << "  DELETE FROM <table> WHERE condition\n\n";
+
+            std::cout << "Conditions:\n";
+            std::cout << "  =  !=  <  >  <=  >=\n";
+            std::cout << "  BETWEEN a AND b\n";
+            std::cout << "  IN (a, b, c)\n";
+            std::cout << "  IS NULL / IS NOT NULL\n\n";
+
+            std::cout << "System:\n";
+            std::cout << "  EXIT\n\n";
+
+            continue;
         }
 
         ParsedCommand pc = parseCommand(command);
