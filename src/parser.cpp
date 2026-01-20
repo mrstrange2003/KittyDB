@@ -78,7 +78,7 @@ static void parseAggregates(const std::string &colPart, std::vector<std::string>
                 aggregates.push_back(agg);
             }
         }
-        // Check for MIN(...)
+        // Check for MIN()
         else if (upper.rfind("MIN(", 0) == 0)
         {
             size_t closePos = token.find(')');
@@ -91,7 +91,7 @@ static void parseAggregates(const std::string &colPart, std::vector<std::string>
                 aggregates.push_back(agg);
             }
         }
-        // Check for MAX(...)
+        // Check for MAX()
         else if (upper.rfind("MAX(", 0) == 0)
         {
             size_t closePos = token.find(')');
@@ -270,7 +270,7 @@ ParsedCommand parseCommand(const string &command)
     if (cmd.rfind("CREATE DATABASE", 0) == 0)
     {
         result.type = CommandType::CREATE_DATABASE;
-        size_t namePos = cmd.find("DATABASE") + 9;
+        size_t namePos = cleaned.find("DATABASE") + 9;
         result.databaseName = trim(cleaned.substr(namePos));
         return result;
     }
@@ -288,7 +288,7 @@ ParsedCommand parseCommand(const string &command)
     else if (cmd.rfind("CREATE TABLE", 0) == 0)
     {
         result.type = CommandType::CREATE;
-        size_t tablePos = cmd.find("TABLE") + 6;
+        size_t tablePos = cleaned.find("TABLE") + 6;
         size_t parenPos = cleaned.find('(', tablePos);
         result.tableName = trim(cleaned.substr(tablePos, parenPos - tablePos));
         size_t closeParen = cleaned.find(')', parenPos);
@@ -299,8 +299,8 @@ ParsedCommand parseCommand(const string &command)
     else if (cmd.rfind("INSERT INTO", 0) == 0)
     {
         result.type = CommandType::INSERT;
-        size_t intoPos = cmd.find("INTO") + 5;
-        size_t valuesPos = cmd.find("VALUES");
+        size_t intoPos = cleaned.find("INTO") + 5;
+        size_t valuesPos = cleaned.find("VALUES");
         result.tableName = trim(cleaned.substr(intoPos, valuesPos - intoPos));
         size_t openParen = cleaned.find('(', valuesPos);
         size_t closeParen = cleaned.find(')', openParen);
@@ -348,7 +348,7 @@ ParsedCommand parseCommand(const string &command)
             selectPos = cleaned.find("DISTINCT", selectPos) + 9;
         }
 
-        size_t fromPos = cmd.find("FROM");
+        size_t fromPos = cleaned.find("FROM");
         if (fromPos == std::string::npos)
             return result;
 
@@ -381,9 +381,9 @@ ParsedCommand parseCommand(const string &command)
         }
 
         // Find WHERE, ORDER BY, LIMIT (case-insensitive)
-        size_t wherePos = cmd.find("WHERE");
-        size_t orderPos = cmd.find("ORDER BY");
-        size_t limitPos = cmd.find("LIMIT");
+        size_t wherePos = cleaned.find("WHERE");
+        size_t orderPos = cleaned.find("ORDER BY");
+        size_t limitPos = cleaned.find("LIMIT");
 
         // Extract table name (between FROM and WHERE/ORDER BY/LIMIT)
         size_t tableStart = fromPos + 5;
@@ -470,8 +470,8 @@ ParsedCommand parseCommand(const string &command)
     else if (cmd.rfind("DELETE FROM", 0) == 0)
     {
         result.type = CommandType::DELETE_CMD;
-        size_t fromPos = cmd.find("FROM") + 5;
-        size_t wherePos = cmd.find("WHERE");
+        size_t fromPos = cleaned.find("FROM") + 5;
+        size_t wherePos = cleaned.find("WHERE");
 
         if (wherePos == std::string::npos)
         {
@@ -491,8 +491,8 @@ ParsedCommand parseCommand(const string &command)
     else if (cmd.rfind("UPDATE", 0) == 0)
     {
         result.type = CommandType::UPDATE;
-        size_t setPos = cmd.find("SET");
-        size_t wherePos = cmd.find("WHERE");
+        size_t setPos = cleaned.find("SET");
+        size_t wherePos = cleaned.find("WHERE");
 
         result.tableName = trim(cleaned.substr(7, setPos - 7));
         result.setClause = trim(cleaned.substr(setPos + 4, wherePos - setPos - 4));
