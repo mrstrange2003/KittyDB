@@ -336,7 +336,7 @@ ParsedCommand parseCommand(const string &command)
         result.type = CommandType::SELECT;
 
         // Check for DISTINCT (right after SELECT keyword)
-        size_t selectPos = cleaned.find("SELECT") + 6;
+        size_t selectPos = cleaned.find("SELECT") + 7;
         std::string afterSelect = trim(cleaned.substr(selectPos));
         std::string afterSelectUpper = afterSelect;
         std::transform(afterSelectUpper.begin(), afterSelectUpper.end(),
@@ -345,10 +345,16 @@ ParsedCommand parseCommand(const string &command)
         if (afterSelectUpper.rfind("DISTINCT", 0) == 0)
         {
             result.distinct = true;
-            selectPos = cleaned.find("DISTINCT", selectPos) + 9;
+
+            size_t distinctPos = cleaned.find("DISTINCT", selectPos);
+            selectPos = distinctPos + 8; // skip DISTINCT
+
+            // skip any spaces after DISTINCT
+            while (selectPos < cleaned.size() && cleaned[selectPos] == ' ')
+                selectPos++;
         }
 
-        size_t fromPos = cleaned.find("FROM");
+        size_t fromPos = cmd.find("FROM");
         if (fromPos == std::string::npos)
             return result;
 
@@ -381,9 +387,9 @@ ParsedCommand parseCommand(const string &command)
         }
 
         // Find WHERE, ORDER BY, LIMIT (case-insensitive)
-        size_t wherePos = cleaned.find("WHERE");
-        size_t orderPos = cleaned.find("ORDER BY");
-        size_t limitPos = cleaned.find("LIMIT");
+        size_t wherePos = cmd.find("WHERE");
+        size_t orderPos = cmd.find("ORDER BY");
+        size_t limitPos = cmd.find("LIMIT");
 
         // Extract table name (between FROM and WHERE/ORDER BY/LIMIT)
         size_t tableStart = fromPos + 5;
