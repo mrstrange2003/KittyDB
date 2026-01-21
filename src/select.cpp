@@ -13,9 +13,7 @@
 #include "schema.h"
 #include "where.h"
 
-/* -------------------------------------------------
-   Helpers
-------------------------------------------------- */
+// Helpers
 
 static bool directoryExists(const std::string &path)
 {
@@ -29,12 +27,10 @@ static bool fileExists(const std::string &path)
     return (stat(path.c_str(), &info) == 0);
 }
 
-/* -------------------------------------------------
-   Pretty table printer (USED BY SELECT)
-------------------------------------------------- */
+//   Pretty table printer (USED BY SELECT)
 static void printPrettyTable(
-    const std::vector<std::string>& headers,
-    const std::vector<std::vector<std::string>>& rows)
+    const std::vector<std::string> &headers,
+    const std::vector<std::vector<std::string>> &rows)
 {
     size_t cols = headers.size();
     std::vector<size_t> widths(cols, 0);
@@ -42,11 +38,12 @@ static void printPrettyTable(
     for (size_t i = 0; i < cols; i++)
         widths[i] = headers[i].size();
 
-    for (const auto& row : rows)
+    for (const auto &row : rows)
         for (size_t i = 0; i < cols; i++)
             widths[i] = std::max(widths[i], row[i].size());
 
-    auto border = [&]() {
+    auto border = [&]()
+    {
         std::cout << "+";
         for (auto w : widths)
             std::cout << std::string(w + 2, '-') << "+";
@@ -63,7 +60,7 @@ static void printPrettyTable(
 
     border();
 
-    for (const auto& row : rows)
+    for (const auto &row : rows)
     {
         std::cout << "|";
         for (size_t i = 0; i < cols; i++)
@@ -75,23 +72,21 @@ static void printPrettyTable(
     border();
 }
 
-/* -------------------------------------------------
-   ORDER BY comparator
-------------------------------------------------- */
+// ORDER BY comparator
 struct RowComparator
 {
     int colIdx;
     bool ascending;
     std::string colType;
 
-    bool operator()(const std::vector<std::string>& a,
-                    const std::vector<std::string>& b) const
+    bool operator()(const std::vector<std::string> &a,
+                    const std::vector<std::string> &b) const
     {
         if (colIdx < 0 || colIdx >= (int)a.size() || colIdx >= (int)b.size())
             return false;
 
-        const std::string& av = a[colIdx];
-        const std::string& bv = b[colIdx];
+        const std::string &av = a[colIdx];
+        const std::string &bv = b[colIdx];
 
         int cmp = 0;
 
@@ -100,8 +95,8 @@ struct RowComparator
             if (colType == "INT")
                 cmp = std::stoi(av) - std::stoi(bv);
             else if (colType == "FLOAT")
-                cmp = (std::stod(av) < std::stod(bv)) ? -1 :
-                      (std::stod(av) > std::stod(bv)) ? 1 : 0;
+                cmp = (std::stod(av) < std::stod(bv)) ? -1 : (std::stod(av) > std::stod(bv)) ? 1
+                                                                                             : 0;
             else
                 cmp = av.compare(bv);
         }
@@ -114,9 +109,7 @@ struct RowComparator
     }
 };
 
-/* -------------------------------------------------
-   SELECT implementation
-------------------------------------------------- */
+// SELECT implementation
 bool selectColumns(
     const std::string &databaseName,
     const std::string &tableName,
@@ -140,7 +133,7 @@ bool selectColumns(
     }
 
     std::string basePath = "..\\databases\\" + databaseName + "\\";
-    std::string tblPath  = basePath + tableName + ".tbl";
+    std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
 
     if (!directoryExists(basePath) || !fileExists(tblPath) || !fileExists(metaPath))
@@ -149,12 +142,12 @@ bool selectColumns(
         return false;
     }
 
-    /* ---------- schema ---------- */
+    // schema
     std::vector<Column> columns;
     if (!parseSchema(metaPath, columns, error))
         return false;
 
-    /* ---------- resolve columns ---------- */
+    // resolve columns
     std::vector<int> colIdxs;
 
     if (selectedColumns.empty())
@@ -165,7 +158,7 @@ bool selectColumns(
     }
     else
     {
-        for (const auto& name : selectedColumns)
+        for (const auto &name : selectedColumns)
         {
             bool found = false;
             for (size_t i = 0; i < columns.size(); i++)
@@ -185,7 +178,7 @@ bool selectColumns(
         }
     }
 
-    /* ---------- read rows ---------- */
+    // read rows
     std::ifstream in(tblPath);
     std::vector<std::vector<std::string>> rows;
     std::string line;
@@ -202,7 +195,8 @@ bool selectColumns(
                 fields.push_back(temp);
                 temp.clear();
             }
-            else temp += c;
+            else
+                temp += c;
         }
         fields.push_back(temp);
 
@@ -212,7 +206,7 @@ bool selectColumns(
         rows.push_back(fields);
     }
 
-    /* ---------- ORDER BY ---------- */
+    // ORDER BY
     if (hasOrderBy && !hasAggregates)
     {
         int idx = -1;
@@ -236,13 +230,13 @@ bool selectColumns(
                   RowComparator{idx, orderBy.ascending, type});
     }
 
-    /* ---------- DISTINCT ---------- */
+    // DISTINCT
     if (distinct)
     {
         std::set<std::vector<std::string>> seen;
         std::vector<std::vector<std::string>> unique;
 
-        for (const auto& r : rows)
+        for (const auto &r : rows)
         {
             std::vector<std::string> key;
             for (int i : colIdxs)
@@ -254,7 +248,7 @@ bool selectColumns(
         rows = unique;
     }
 
-    /* ---------- AGGREGATES ---------- */
+    // AGGREGATES
     if (hasAggregates)
     {
         std::vector<std::string> results;
@@ -262,19 +256,30 @@ bool selectColumns(
 
         for (size_t i = 0; i < aggregates.size(); i++)
         {
-            if (i) std::cout << " | ";
+            if (i)
+                std::cout << " | ";
             std::cout << results[i];
         }
         std::cout << "\n";
         return true;
     }
 
-    /* ---------- LIMIT / OFFSET ---------- */
-    int start = std::max(0, offsetCount);
-    int end   = hasLimit ? std::min((int)rows.size(), start + limitCount)
-                         : (int)rows.size();
+    // LIMIT / OFFSET
+    int start = offsetCount; // Start from offset position
+    if (start < 0)
+        start = 0;
+    if (start >= (int)rows.size())
+        start = (int)rows.size();
 
-    /* ---------- build output ---------- */
+    int end = (int)rows.size(); // Default: go to end
+    if (hasLimit)
+    {
+        end = start + limitCount; // Start + how many to return
+        if (end > (int)rows.size())
+            end = (int)rows.size();
+    }
+
+    // build output
     std::vector<std::string> headers;
     for (int i : colIdxs)
         headers.push_back(columns[i].name);
