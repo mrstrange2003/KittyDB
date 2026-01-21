@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 
 static int getColumnIndex(
     const std::vector<Column> &columns,
