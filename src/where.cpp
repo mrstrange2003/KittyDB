@@ -1,6 +1,7 @@
 // where.cpp
 
 #include "where.h"
+
 #include <cstdlib>
 #include <algorithm>
 #include <cctype>
@@ -68,7 +69,7 @@ static bool matchLike(const std::string &text, const std::string &pattern)
     return patIdx == pattern.size();
 }
 
-// Evaluate IN operator: "val1,val2,val3"
+// Evaluate IN operator "val1,val2,val3"
 static bool evaluateIn(const std::string &value, const std::string &inList)
 {
     std::stringstream ss(inList);
@@ -135,7 +136,7 @@ static bool evaluateCondition(
 
     if (cond.isNotNullCheck)
         return cell != "NULL";
-        
+
     // Numeric comparison
     if (type == "INT")
     {
