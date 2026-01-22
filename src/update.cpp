@@ -133,6 +133,16 @@ bool updateWhere(
         return false;
     }
 
+    // Check if user is trying to modify __id
+    for (const auto &a : assignments)
+    {
+        if (a.first == "__id")
+        {
+            error = "Cannot modify system column '__id'";
+            return false;
+        }
+    }
+
     // map assignments to column indexes
     std::vector<std::pair<int, std::string>> updates;
     for (const auto &a : assignments)
