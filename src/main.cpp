@@ -23,6 +23,15 @@ bool directoryExists(const string &path)
     return (stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFDIR));
 }
 
+static std::string trim(std::string s)
+{
+    while (!s.empty() && s.front() == ' ')
+        s.erase(s.begin());
+    while (!s.empty() && s.back() == ' ')
+        s.pop_back();
+    return s;
+}
+
 int main()
 {
     // shell commands
@@ -37,6 +46,8 @@ int main()
         cout << "KittyDB > ";
         string command;
         getline(cin, command);
+
+        command = trim(command);
 
         if (command.empty())
         {
