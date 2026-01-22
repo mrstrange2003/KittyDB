@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 
 // helpers
-
 static int getNextId(
     const std::string &databaseName,
     const std::string &tableName,
@@ -74,7 +73,6 @@ static std::string cleanValue(std::string v)
 }
 
 // main logic
-
 bool insertRow(
     const std::string &databaseName,
     const std::string &tableName,
