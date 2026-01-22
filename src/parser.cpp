@@ -1,7 +1,8 @@
-// parser.cpp 
+// parser.cpp
 
 #include "parser.h"
 #include "where.h"
+
 #include <iostream>
 #include <algorithm>
 #include <sstream>
