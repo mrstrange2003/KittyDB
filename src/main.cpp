@@ -1,7 +1,5 @@
-#include <iostream>
-#include <string>
-#include <algorithm>
-#include <sys/stat.h>
+// main.cpp
+
 #include "parser.h"
 #include "where.h"
 #include "aggregate.h"
@@ -11,6 +9,11 @@
 #include "select.h"
 #include "delete.h"
 #include "update.h"
+
+#include <iostream>
+#include <string>
+#include <algorithm>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -22,6 +25,7 @@ bool directoryExists(const string &path)
 
 int main()
 {
+    // shell commands
     cout << "Welcome to KittyDB" << endl;
     cout << "Type 'help' to show supported commands" << endl;
     cout << "Type 'exit' to quit" << endl;
@@ -88,6 +92,7 @@ int main()
 
         switch (pc.type)
         {
+            // CREATE DATABASE command
         case CommandType::CREATE_DATABASE:
         {
             std::string error;
@@ -101,7 +106,7 @@ int main()
             }
             break;
         }
-
+            // USE DATABASE command
         case CommandType::USE_DATABASE:
         {
             string dbPath = "..\\databases\\" + pc.databaseName;
@@ -117,7 +122,7 @@ int main()
             }
             break;
         }
-
+            // CREATE TABLE command
         case CommandType::CREATE:
         {
             if (currentDatabase.empty())
@@ -138,7 +143,7 @@ int main()
             }
             break;
         }
-
+            // INSERT VALUES into TABLE command
         case CommandType::INSERT:
         {
             if (currentDatabase.empty())
@@ -158,7 +163,7 @@ int main()
             }
             break;
         }
-
+            // DESCRIBE TABLE command
         case CommandType::DESCRIBE:
         {
             std::string error;
@@ -168,7 +173,7 @@ int main()
             }
             break;
         }
-
+            // SHOW TABLES IN DATABASE command
         case CommandType::SHOW_TABLES:
         {
             std::string error;
@@ -178,7 +183,7 @@ int main()
             }
             break;
         }
-
+            // TRUNCATE TABLE VALUES command
         case CommandType::TRUNCATE:
         {
             std::string error;
@@ -192,7 +197,7 @@ int main()
             }
             break;
         }
-
+            // SELECT(display) TABLE VALUES
         case CommandType::SELECT:
         {
             std::string error;
@@ -242,7 +247,7 @@ int main()
             }
             break;
         }
-
+            // DELETE TABLE rows
         case CommandType::DELETE_CMD:
         {
             if (!pc.hasWhere)
@@ -271,7 +276,7 @@ int main()
             }
             break;
         }
-
+            // UPDATE TABLE rows
         case CommandType::UPDATE:
         {
             std::string error;
