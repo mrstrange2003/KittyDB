@@ -4,8 +4,7 @@
 #include <string>
 
 bool validateValueForType(
-    const std::string& value,
-    const std::string& type
-);
+    const std::string &value,
+    const std::string &type);
 
 #endif
