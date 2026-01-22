@@ -1,10 +1,15 @@
 // parser.h
+
 #ifndef PARSER_H
 #define PARSER_H
-#include<string>
-#include<vector>
 
-enum class CommandType{
+#include "aggregate.h"
+
+#include <string>
+#include <vector>
+
+enum class CommandType
+{
     CREATE_DATABASE,
     USE_DATABASE,
     CREATE,
@@ -22,15 +27,14 @@ enum class CommandType{
 struct SimpleCondition;
 struct WhereCondition;
 
-// We need to include aggregate.h for AggregateFunction
-#include "aggregate.h"
-
-struct OrderByClause {
+struct OrderByClause
+{
     std::string column;
     bool ascending = true;
 };
 
-struct ParsedCommand {
+struct ParsedCommand
+{
     CommandType type;
 
     std::string databaseName;
@@ -40,12 +44,12 @@ struct ParsedCommand {
     std::vector<AggregateFunction> aggregateFunctions;
     bool hasAggregates = false;
     bool distinct = false;
-    
+
     std::string values;
     std::string schema;
-    
+
     bool hasWhere = false;
-    WhereCondition* where = nullptr;
+    WhereCondition *where = nullptr;
 
     bool hasOrderBy = false;
     OrderByClause orderBy;
@@ -57,6 +61,6 @@ struct ParsedCommand {
     std::string setClause;
 };
 
-ParsedCommand parseCommand(const std::string& command);
+ParsedCommand parseCommand(const std::string &command);
 
 #endif
