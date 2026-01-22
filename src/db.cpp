@@ -1,9 +1,12 @@
 #include "db.h"
-#include <direct.h>   // _mkdir
+
+#include <direct.h> // _mkdir
 #include <string>
 
-bool createDatabase(const std::string& dbName, std::string& error) {
-    if (dbName.empty()) {
+bool createDatabase(const std::string &dbName, std::string &error)
+{
+    if (dbName.empty())
+    {
         error = "Database name can't be empty";
         return false;
     }
@@ -13,9 +16,12 @@ bool createDatabase(const std::string& dbName, std::string& error) {
     // Try creating directory
     int result = _mkdir(path.c_str());
 
-    if (result == 0) {
+    if (result == 0)
+    {
         return true; // success
-    } else {
+    }
+    else
+    {
         error = "Database already exists and cannot be created";
         return false;
     }
