@@ -127,7 +127,5 @@ bool deleteWhere(
     }
     out.close();
 
-    
-
-    return true;
+        return true;
 }
