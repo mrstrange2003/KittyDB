@@ -1,5 +1,9 @@
 // select.cpp
 
+#include "select.h"
+#include "schema.h"
+#include "where.h"
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -9,12 +13,7 @@
 #include <algorithm>
 #include <iomanip>
 
-#include "select.h"
-#include "schema.h"
-#include "where.h"
-
 // Helpers
-
 static bool directoryExists(const std::string &path)
 {
     struct stat info;
