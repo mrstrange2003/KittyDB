@@ -10,8 +10,8 @@
 #include <sys/stat.h>
 #include <iomanip>
 #include <algorithm>
-
 #include <windows.h>
+
 #undef max
 #undef min
 
