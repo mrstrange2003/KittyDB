@@ -8,8 +8,15 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+#include <algorithm>
 
 // helpers
+static std::string toUpper(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
+}
+
 static int getNextId(
     const std::string &databaseName,
     const std::string &tableName,
@@ -135,9 +142,24 @@ bool insertRow(
         return false;
     }
 
-    // validate only user columns
+    // validate all columns (including user columns)
     for (size_t i = 1; i < columns.size(); i++)
     {
+        // Check NOT NULL constraint FIRST
+        std::string valueUpper = toUpper(parsedValues[i - 1]);
+        if (columns[i].notNull && valueUpper == "NULL")
+        {
+            error = "Column '" + columns[i].name + "' cannot be NULL (NOT NULL constraint)";
+            return false;
+        }
+
+        // Allow NULL for columns without NOT NULL constraint
+        if (valueUpper == "NULL")
+        {
+            continue; // Skip type validation for NULL values
+        }
+
+        // Then check type validation
         if (!validateValueForType(parsedValues[i - 1], columns[i].type))
         {
             error = "Type mismatch for column '" + columns[i].name +
@@ -145,7 +167,6 @@ bool insertRow(
             return false;
         }
     }
-
     // get auto-increment id
     int id = getNextId(databaseName, tableName, error);
     if (id == -1)
