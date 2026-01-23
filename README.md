@@ -332,14 +332,15 @@ Building KittyDB demonstrates understanding of:
 - **Algorithm implementation** - Sorting, searching, filtering
 - **Software design** - Modular architecture and separation of concerns
 
-## License
-
-This project is open source and available for educational and personal use.
-
 ## Author
 
-Built as a comprehensive student project to demonstrate database engine fundamentals.
+**J Dipayan Rao**
 
+A passionate developer interested in database systems and programming.
+
+- GitHub: [@mrstrange2003](https://github.com/mrstrange2003)
+- LinkedIn: [J Dipayan Rao](https://www.linkedin.com/in/dipayan-rao)
+  
 ---
 
 **Happy querying! 🚀**
