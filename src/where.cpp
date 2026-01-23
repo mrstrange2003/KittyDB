@@ -130,12 +130,20 @@ static bool evaluateCondition(
     std::string cell = rowValues[idx];
     std::string type = columns[idx].type;
 
+    // Convert cell value to uppercase for NULL comparison (case-insensitive)
+    std::string cellUpper = cell;
+    std::transform(cellUpper.begin(), cellUpper.end(), cellUpper.begin(), ::toupper);
+
     // NULL checks
     if (cond.isNullCheck)
-        return cell == "NULL";
+        return cellUpper == "NULL";
 
     if (cond.isNotNullCheck)
-        return cell != "NULL";
+        return cellUpper != "NULL";
+
+    // Skip other comparisons if cell is NULL (they should return false)
+    if (cellUpper == "NULL")
+        return false;
 
     // Numeric comparison
     if (type == "INT")
