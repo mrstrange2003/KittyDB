@@ -441,10 +441,8 @@ A passionate developer interested in database systems and programming.
 
 **[⭐ Star this repo if you found it helpful!](https://github.com/mrstrange2003/KittyDB)**
 
-**[🐛 Report Issues](https://github.com)** • **[💡 Suggest Features](https://github.com)**
+**[🐛 Report Issues](https://github.com/mrstrange2003/KittyDB/issues)** • **[💡 Suggest Features](https://github.com/mrstrange2003/KittyDB/issues)**
 
 **Happy querying! 🚀🐱**
-
-Made with ❤️ by a passionate developer
 
 </div>
