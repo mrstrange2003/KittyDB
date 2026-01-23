@@ -45,10 +45,11 @@ bool parseSchema(
     {
         part = trim(part);
 
+        // Parse: "columnName TYPE" or "columnName TYPE NOT NULL"
         std::stringstream colStream(part);
-        std::string colName, colType;
+        std::string colName, colType, keyword1, keyword2;
 
-        colStream >> colName >> colType;
+        colStream >> colName >> colType >> keyword1 >> keyword2;
 
         if (colName.empty() || colType.empty())
         {
@@ -58,7 +59,19 @@ bool parseSchema(
 
         Column c;
         c.name = colName;
-        c.type = toUpper(colType); // enforce uppercase
+        c.type = toUpper(colType);
+
+        // Check for NOT NULL constraint
+        if (!keyword1.empty())
+        {
+            std::string kw1Upper = toUpper(keyword1);
+            std::string kw2Upper = toUpper(keyword2);
+
+            if (kw1Upper == "NOT" && kw2Upper == "NULL")
+            {
+                c.notNull = true;
+            }
+        }
 
         columns.push_back(c);
     }
@@ -73,6 +86,7 @@ bool parseSchema(
     Column idCol;
     idCol.name = "__id";
     idCol.type = "INT";
+    idCol.notNull = true; // __id cannot be NULL
     columns.insert(columns.begin(), idCol);
 
     return true;
