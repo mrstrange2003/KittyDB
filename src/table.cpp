@@ -207,7 +207,7 @@ bool createTable(
 
     std::string tblPath = basePath + tableName + ".tbl";
     std::string metaPath = basePath + tableName + ".meta";
-    std::string idxPath = basePath + tableName + ".idx";
+    //std::string idxPath = basePath + tableName + ".idx";
     std::string seqPath = basePath + tableName + ".seq";
 
     if (fileExists(metaPath))
@@ -218,7 +218,7 @@ bool createTable(
 
     std::ofstream(tblPath).close();
     std::ofstream(metaPath) << schema;
-    std::ofstream(idxPath).close();
+    //std::ofstream(idxPath).close();
     std::ofstream(seqPath) << "0";
 
     return true;
