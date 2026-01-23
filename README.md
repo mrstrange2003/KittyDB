@@ -439,7 +439,7 @@ A passionate developer interested in database systems and programming.
 
 <div align="center">
 
-**[⭐ Star this repo if you found it helpful!](https://github.com)**
+**[⭐ Star this repo if you found it helpful!](https://github.com/mrstrange2003/KittyDB)**
 
 **[🐛 Report Issues](https://github.com)** • **[💡 Suggest Features](https://github.com)**
 
