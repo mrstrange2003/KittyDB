@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <sys/stat.h>
+#include <algorithm>
 
 // helpers
 static bool directoryExists(const std::string &path)
@@ -21,6 +22,12 @@ static bool fileExists(const std::string &path)
 {
     struct stat info;
     return (stat(path.c_str(), &info) == 0);
+}
+
+static std::string toUpper(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
 }
 
 // trim helper
@@ -170,6 +177,17 @@ bool updateWhere(
         }
 
         updates.push_back({idx, a.second});
+    }
+
+    // Validate NOT NULL constraints
+    for (const auto &u : updates)
+    {
+        std::string valueUpper = toUpper(u.second);
+        if (columns[u.first].notNull && valueUpper == "NULL")
+        {
+            error = "Column '" + columns[u.first].name + "' cannot be NULL (NOT NULL constraint)";
+            return false;
+        }
     }
 
     // read rows
