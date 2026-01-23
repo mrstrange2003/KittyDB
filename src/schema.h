@@ -10,6 +10,7 @@ struct Column
 {
     std::string name;
     std::string type;
+    bool notNull = false;
 };
 
 // parse schema from .meta file
