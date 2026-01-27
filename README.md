@@ -1,59 +1,63 @@
-# KittyDB 🐱
+# 🐱 KittyDB
 
-A lightweight, file-based relational database engine built from scratch in C++. KittyDB implements a subset of SQL functionality with a custom query parser, providing a complete experience of database internals.
+<div align="center">
 
-## Features
+[![C++](https://img.shields.io/badge/C%2B%2B-17-blue?style=flat-square&logo=cplusplus)](https://isocpp.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=flat-square)](https://github.com)
+[![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)](https://github.com)
 
-### Core Database Operations
-- **CREATE DATABASE** - Create new database directories
-- **USE DATABASE** - Switch between databases
-- **CREATE TABLE** - Define tables with multiple data types
-- **SHOW TABLES** - List all tables in current database
-- **DESCRIBE TABLE** - View table schema and columns
-- **TRUNCATE TABLE** - Clear all rows from a table
+**A lightweight, file-based relational database engine built from scratch in C++**
 
-### Data Manipulation
-- **INSERT INTO** - Add rows with type validation
-- **SELECT** - Query with powerful filtering and aggregation
-- **UPDATE** - Modify rows matching conditions
-- **DELETE FROM** - Remove rows based on WHERE clause
+A complete SQL database implementation showcasing database internals, custom parsing, and query execution.
 
-### Query Features
-- **WHERE Clause** - Filter with `=`, `!=`, `<`, `>`, `<=`, `>=`, `BETWEEN`, `IN`, `LIKE`, `IS NULL`
-- **Logical Operators** - Combine conditions with `AND`/`OR`
-- **ORDER BY** - Sort results ascending or descending
-- **LIMIT / OFFSET** - Pagination support
-- **DISTINCT** - Remove duplicate rows
-- **Aggregates** - `COUNT()`, `SUM()`, `AVG()`, `MIN()`, `MAX()`
+[Features](#-features) • [Quick Start](#-quick-start) • [Examples](#-usage-examples) • [Architecture](#-architecture) • [Documentation](#-supported-sql-syntax)
 
-### Supported Data Types
-- `INT` - Integer values
-- `FLOAT` - Decimal numbers
-- `TEXT` / `VARCHAR` - String data
-- `BOOL` - Boolean values (true/false, 1/0)
-- `CHAR` - Single character
-- `DATE` - Date in YYYY-MM-DD format
+</div>
 
-## Architecture
+---
 
+## ✨ Features
+
+### 🗄️ Core Database Operations
+- ✅ **CREATE DATABASE** - Create new database directories
+- ✅ **USE DATABASE** - Switch between databases  
+- ✅ **CREATE TABLE** - Define tables with multiple data types and constraints
+- ✅ **SHOW TABLES** - List all tables in current database
+- ✅ **DESCRIBE TABLE** - View table schema and columns
+- ✅ **TRUNCATE TABLE** - Clear all rows from a table
+
+### 📝 Data Manipulation
+- ✅ **INSERT INTO** - Add rows with type validation
+- ✅ **SELECT** - Query with powerful filtering and aggregation
+- ✅ **UPDATE** - Modify rows matching conditions
+- ✅ **DELETE FROM** - Remove rows based on WHERE clause
+
+### 🔍 Query Features
+| Feature | Example | Supported |
+|---------|---------|-----------|
+| **WHERE Filters** | `age > 30 AND salary < 100000` | ✅ |
+| **Logical Operators** | `AND`, `OR` with proper precedence | ✅ |
+| **ORDER BY** | `ORDER BY age DESC` | ✅ |
+| **LIMIT/OFFSET** | Pagination support | ✅ |
+| **DISTINCT** | Remove duplicate rows | ✅ |
+| **Aggregates** | COUNT, SUM, AVG, MIN, MAX | ✅ |
+| **Pattern Matching** | LIKE with % and _ wildcards | ✅ |
+
+### 📦 Supported Data Types
 ```
-KittyDB/
-├── parser.cpp/h       - SQL command parsing and tokenization
-├── where.cpp/h        - WHERE clause evaluation and condition matching
-├── select.cpp/h       - SELECT query execution with filtering/sorting
-├── insert.cpp/h       - INSERT row operations
-├── update.cpp/h       - UPDATE row operations
-├── delete.cpp/h       - DELETE row operations
-├── aggregate.cpp/h    - Aggregate function calculations
-├── table.cpp/h        - Table creation and schema management
-├── db.cpp/h           - Database creation and directory handling
-├── schema.cpp/h       - Schema parsing and column management
-├── types.cpp/h        - Data type validation
-├── main.cpp           - Command-line interface and REPL
-└── databases/         - Data storage directory (auto-created)
+INT          FLOAT        TEXT/VARCHAR    BOOL
+CHAR         DATE (YYYY-MM-DD)           NULL support
 ```
 
-## Getting Started
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- C++ 17 or higher
+- g++ compiler
+- Linux/Windows (with path adaptation)
 
 ### Compilation
 
@@ -62,13 +66,12 @@ cd src
 g++ main.cpp parser.cpp where.cpp schema.cpp types.cpp table.cpp db.cpp insert.cpp select.cpp delete.cpp update.cpp aggregate.cpp -o kittydb
 ```
 
-### Running
+### Run
 
 ```bash
 ./kittydb or kittydb
 ```
 
-You'll see the KittyDB prompt:
 ```
 Welcome to KittyDB
 Type 'help' to show supported commands
@@ -76,261 +79,353 @@ Type 'exit' to quit
 KittyDB >
 ```
 
-## Usage Examples
+---
 
-### Creating a Database and Table
+## 💡 Usage Examples
+
+### 1️⃣ Create & Setup
 
 ```sql
 create database company
 use company
-create table employees (name text, age int, salary float)
+create table employees (id int, name text not null, salary float, joined_date date)
 ```
 
-### Inserting Data
+### 2️⃣ Insert Data
 
 ```sql
-insert into employees values ("Alice Johnson", 28, 75000.00)
-insert into employees values ("Bob Smith", 35, 85000.50)
-insert into employees values ("Carol White", 32, 92000.00)
-insert into employees values ("David Brown", 29, 68000.75)
-insert into employees values ("Eve Davis", 31, 88000.00)
+insert into employees values (1, "Alice Johnson", 75000.00, "2020-01-15")
+insert into employees values (2, "Bob Smith", 85000.50, "2019-03-22")
+insert into employees values (3, "Carol White", 92000.00, "2018-06-10")
+insert into employees values (4, "David Brown", 68000.75, "2021-09-30")
+insert into employees values (5, "Eve Davis", 88000.00, "2020-11-05")
 ```
 
-### Basic Queries
+### 3️⃣ Query Data
 
 ```sql
--- Select all rows
+-- ✅ Simple SELECT
 select * from employees
 
--- Select specific columns
-select name, salary from employees
+-- ✅ Filter results
+select * from employees where salary > 80000
 
--- Filter with WHERE
-select * from employees where age > 30
+-- ✅ Complex conditions
+select name, salary from employees 
+where salary >= 80000 and id > 2
 
--- Complex conditions
-select * from employees where salary >= 80000 and age < 35
+-- ✅ Pattern matching
 select * from employees where name like "%Smith%"
-select * from employees where age between 28 and 32
+
+-- ✅ Range queries
+select * from employees where salary between 75000 and 90000
 ```
 
-### Sorting and Pagination
+### 4️⃣ Sorting & Pagination
 
 ```sql
--- Sort by salary descending
-select * from employees order by salary desc
-
--- Get top 3 highest paid employees
+-- ✅ Sort descending
 select * from employees order by salary desc limit 3
 
--- Pagination: Get 2 rows per page, page 2
+-- ✅ Pagination
 select * from employees limit 2 offset 2
+
+-- ✅ Multiple sorting
+select name, salary from employees 
+where id >= 2 
+order by salary desc 
+limit 5
 ```
 
-### Aggregation
+### 5️⃣ Aggregation
 
 ```sql
--- Count total employees
+-- ✅ Count employees
 select count(*) from employees
 
--- Average salary
-select avg(salary) from employees
+-- ✅ Statistics
+select avg(salary), min(salary), max(salary) from employees
 
--- Min and max age
-select min(age), max(age) from employees
-
--- Sum of all salaries
-select sum(salary) from employees
+-- ✅ Multiple aggregates
+select count(*), avg(salary), sum(salary) from employees
 ```
 
-### Advanced Queries
+### 6️⃣ Update & Delete
 
 ```sql
--- Remove duplicates
-select distinct age from employees
+-- ✅ Update
+update employees set salary = 95000 where name = "Alice Johnson"
 
--- Multiple aggregates
-select count(*), avg(salary), max(salary) from employees
-
--- Filter with ORDER BY and LIMIT
-select * from employees where age >= 30 order by name asc limit 10
+-- ✅ Delete
+delete from employees where id = 4
 ```
 
-### Updating Data
+---
 
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────┐
+│           KittyDB Engine                │
+├─────────────────────────────────────────┤
+│  main.cpp                               │
+│  ├─ REPL / Command Interface            │
+│  └─ Command Dispatcher                  │
+├─────────────────────────────────────────┤
+│  parser.cpp                             │
+│  ├─ SQL Tokenization                    │
+│  ├─ Command Parsing                     │
+│  └─ WHERE Clause Analysis               │
+├─────────────────────────────────────────┤
+│  Execution Layer                        │
+│  ├─ select.cpp (Query Execution)        │
+│  ├─ insert.cpp (Row Insertion)          │
+│  ├─ update.cpp (Row Modification)       │
+│  ├─ delete.cpp (Row Deletion)           │
+│  └─ aggregate.cpp (Calculations)        │
+├─────────────────────────────────────────┤
+│  Storage Layer                          │
+│  ├─ table.cpp (Table Management)        │
+│  ├─ schema.cpp (Schema Parsing)         │
+│  ├─ db.cpp (Database Management)        │
+│  ├─ types.cpp (Type Validation)         │
+│  └─ where.cpp (Condition Evaluation)    │
+├─────────────────────────────────────────┤
+│  File System                            │
+│  └─ databases/                          │
+│     ├─ [database1]/                     │
+│     │  ├─ table1.tbl (Data)             │
+│     │  ├─ table1.meta (Schema)          │
+│     │  └─ table1.seq (Sequence)         │
+│     └─ [database2]/                     │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 📋 Supported SQL Syntax
+
+### Database Commands
 ```sql
--- Update single column
-update employees set salary = 90000 where name = "Alice Johnson"
-
--- Update multiple columns
-update employees set age = 33, salary = 95000 where name = "Bob Smith"
-```
-
-### Deleting Data
-
-```sql
--- Delete specific rows
-delete from employees where age < 25
-
--- Delete rows matching complex condition
-delete from employees where salary < 65000 and age > 40
-```
-
-## Supported SQL Syntax
-
-### Commands (Case-Insensitive)
-
-```
-CREATE DATABASE <name>
-USE <database>
-CREATE TABLE <table> (col TYPE, col TYPE, ...)
+CREATE DATABASE database_name
+USE database_name
 SHOW TABLES
-DESCRIBE <table>
-TRUNCATE <table>
+DESCRIBE table_name
+TRUNCATE TABLE table_name
+```
 
-INSERT INTO <table> VALUES (val1, val2, ...)
-SELECT [DISTINCT] col1, col2, ... FROM <table>
-       [WHERE condition]
-       [ORDER BY col ASC|DESC]
-       [LIMIT n OFFSET m]
-UPDATE <table> SET col=val [, col=val] WHERE condition
-DELETE FROM <table> WHERE condition
+### Table Definition
+```sql
+CREATE TABLE table_name (
+    column_name DATA_TYPE,
+    column_name DATA_TYPE NOT NULL,
+    ...
+)
+```
+
+### Data Operations
+```sql
+-- INSERT
+INSERT INTO table_name VALUES (val1, val2, val3)
+
+-- SELECT
+SELECT [DISTINCT] col1, col2, ... FROM table_name
+  [WHERE condition]
+  [ORDER BY column ASC|DESC]
+  [LIMIT n OFFSET m]
+
+-- UPDATE
+UPDATE table_name SET col1=val1, col2=val2 WHERE condition
+
+-- DELETE
+DELETE FROM table_name WHERE condition
 ```
 
 ### WHERE Operators
 
-| Operator | Example | Description |
-|----------|---------|-------------|
-| `=` | `age = 30` | Equals |
-| `!=` | `age != 25` | Not equals |
-| `<` | `salary < 50000` | Less than |
-| `>` | `age > 30` | Greater than |
-| `<=` | `salary <= 100000` | Less than or equal |
-| `>=` | `age >= 25` | Greater than or equal |
-| `BETWEEN` | `age between 25 and 35` | Within range |
-| `IN` | `status in (1, 2, 3)` | In list |
-| `LIKE` | `name like "%Smith"` | Pattern matching (% = any chars, _ = single char) |
-| `IS NULL` | `phone is null` | Null check |
-| `IS NOT NULL` | `email is not null` | Not null check |
+```
+=        Equal to
+!=       Not equal to
+<        Less than
+>        Greater than
+<=       Less than or equal
+>=       Greater than or equal
+BETWEEN  Range check
+IN       Value in list
+LIKE     Pattern matching (% any, _ single)
+IS NULL  Null check
+IS NOT NULL  Not null check
+```
 
 ### Logical Operators
-
-- `AND` - Both conditions must be true
-- `OR` - At least one condition must be true
-
-```sql
-select * from employees where age > 30 and salary > 80000
-select * from employees where department = "HR" or department = "IT"
+```
+AND      Both conditions true
+OR       At least one condition true
 ```
 
-## Technical Details
+---
 
-### Data Storage
+## 💾 Data Storage Format
 
-- Databases are stored as directories in `databases/`
-- Tables use three files:
-  - `.tbl` - Actual row data (pipe-delimited format)
-  - `.meta` - Schema metadata
-  - `.seq` - Auto-increment sequence counter
-
-Example `.tbl` file:
 ```
-1|Alice Johnson|28|75000.00
-2|Bob Smith|35|85000.50
-3|Carol White|32|92000.00
+databases/
+├── company/
+│   ├── employees.tbl          (Pipe-delimited data)
+│   ├── employees.meta         (Schema definition)
+│   └── employees.seq          (Auto-increment counter)
+└── production/
+    └── orders.tbl
 ```
 
-### Parser Implementation
-
-The parser uses a hand-written recursive descent approach that:
-- Converts SQL keywords to uppercase for comparison
-- Preserves original casing for identifiers (database/table/column names)
-- Handles whitespace-tolerant command parsing
-- Supports complex WHERE clauses with AND/OR logic
-
-### Query Execution Order
-
-1. **WHERE filtering** - Apply conditions to rows
-2. **ORDER BY** - Sort filtered rows
-3. **DISTINCT** - Remove duplicates
-4. **Aggregates** - Calculate functions (returns early)
-5. **LIMIT/OFFSET** - Apply pagination
-
-## Limitations
-
-- **No JOINs** - Cannot query across multiple tables
-- **No GROUP BY** - Cannot group results
-- **No transactions** - No COMMIT/ROLLBACK support
-- **No indexes** - All queries perform full table scans
-- **No constraints** - No PRIMARY KEY, FOREIGN KEY, or UNIQUE constraints
-- **Single-user** - Not designed for concurrent access
-- **No ALTER TABLE** - Cannot modify table schema after creation
-- **No arithmetic expressions** - WHERE clauses don't support math operations
-- **Windows-only paths** - Uses Windows-style path separators (can be adapted)
-
-## System Columns
-
-Every table automatically includes a `__id` column:
-- **Type:** INT
-- **Auto-increment:** Increments with each new row
-- **Read-only:** Cannot be modified by users
-- **Purpose:** Serves as implicit primary key
-
-Example:
-```sql
-create table users (name text)
-insert into users values ("Alice")
-insert into users values ("Bob")
--- Internally stored as: 1|Alice and 2|Bob
+### Example `.tbl` File (Pipe-delimited)
+```
+1|Alice Johnson|75000.00|2020-01-15
+2|Bob Smith|85000.50|2019-03-22
+3|Carol White|92000.00|2018-06-10
 ```
 
-## Error Handling
+### Example `.meta` File
+```
+id int, name text not null, salary float, joined_date date
+```
 
-KittyDB provides clear error messages for:
-- Missing database or table
-- Invalid data types
-- Unknown columns
-- Malformed WHERE conditions
-- Type mismatches in INSERT/UPDATE
-- Modifying system columns
+---
 
-## Performance Notes
+## ⚙️ Query Execution Pipeline
 
-- **Full table scans** - Every SELECT scans entire table (no indexes)
-- **In-memory sorting** - ORDER BY loads all rows into memory
-- **String parsing** - WHERE conditions use string parsing (no compilation)
+```
+SQL Input
+   ↓
+Parser (Tokenization & Analysis)
+   ↓
+Command Type Identification
+   ↓
+WHERE Filtering (Row Selection)
+   ↓
+ORDER BY (Sorting)
+   ↓
+DISTINCT (Deduplication)
+   ↓
+AGGREGATES (Calculations)
+   ↓
+LIMIT/OFFSET (Pagination)
+   ↓
+Output Formatting & Display
+```
 
-For small datasets (< 100,000 rows), performance is acceptable.
+---
 
-## Future Enhancements
+## 🎯 System Features
 
-Potential improvements for future versions:
-- [ ] JOIN operations (INNER, LEFT, RIGHT, FULL)
-- [ ] GROUP BY and HAVING clauses
-- [ ] Index support for faster queries
-- [ ] Transaction support (COMMIT/ROLLBACK)
-- [ ] Constraints (PRIMARY KEY, FOREIGN KEY, UNIQUE)
+### ✅ Automatic Columns
+Every table includes an `__id` column:
+```
+__id (INT, AUTO-INCREMENT, READ-ONLY)
+```
+
+### ✅ Type Validation
+```
+INSERT INTO users VALUES (1, "Alice", 28)     ✅ OK
+INSERT INTO users VALUES ("text", "Bob", 30)  ❌ Type Mismatch
+```
+
+### ✅ Constraint Support
+```
+CREATE TABLE users (
+    id INT,
+    email TEXT NOT NULL              ✅ Enforced
+)
+
+INSERT INTO users VALUES (1, NULL)   ❌ Error: Cannot be NULL
+```
+
+### ✅ NULL Handling
+```
+-- Columns without NOT NULL accept NULL
+INSERT INTO logs VALUES (1, NULL)    ✅ OK
+
+-- Columns with NOT NULL reject NULL
+INSERT INTO users VALUES (1, NULL)   ❌ Error
+```
+
+---
+
+## 📊 Performance Characteristics
+
+| Operation | Complexity | Notes |
+|-----------|-----------|-------|
+| SELECT | O(n) | Full table scan (no indexes) |
+| INSERT | O(1) | Append to file |
+| UPDATE | O(n) | Scan + rewrite |
+| DELETE | O(n) | Scan + rewrite |
+| ORDER BY | O(n log n) | In-memory sort |
+| WHERE | O(n) | Linear scan |
+
+**Best for:** Small to medium datasets (< 100K rows)
+
+---
+
+## ❌ Limitations for Now
+
+- No JOIN operations (single table queries only)
+- No GROUP BY / HAVING clauses
+- No transaction support (COMMIT/ROLLBACK)
+- No indexing (all queries are full scans)
+- No PRIMARY KEY or FOREIGN KEY constraints
+- No ALTER TABLE (immutable schema)
+- No arithmetic in WHERE clauses
+- Windows-only file paths (adaptable)
+
+---
+
+## 🔮 Future Enhancements
+
+- [ ] Multi-table JOINs (INNER, LEFT, RIGHT, FULL)
+- [ ] GROUP BY with HAVING support
+- [ ] Index creation and management
+- [ ] Transaction support (ACID properties)
+- [ ] Constraint system (PKs, FKs, UNIQUE)
 - [ ] ALTER TABLE operations
-- [ ] Cross-platform path handling
-- [ ] Multi-user concurrent access
-- [ ] Query optimization and execution planning
+- [ ] Cross-platform paths
+- [ ] Concurrent access
+- [ ] Query optimization
 
-## Code Quality
+---
 
-- **Modular design** - Separated concerns (parsing, execution, storage)
-- **Error handling** - Comprehensive error messages and validation
-- **Memory safety** - Proper resource management and cleanup
-- **Input validation** - Type checking and bounds verification
+## 🎓 Learning Outcomes
 
-## Learning Outcomes
+This project demonstrates:
 
-Building KittyDB demonstrates understanding of:
-- **SQL fundamentals** - Query syntax and semantics
-- **Parsing** - Custom command-line parsing and tokenization
-- **Data structures** - Vectors, sets, maps for efficient data management
-- **File I/O** - Persistent data storage and retrieval
-- **Algorithm implementation** - Sorting, searching, filtering
-- **Software design** - Modular architecture and separation of concerns
+- **SQL Fundamentals** → Query syntax, semantics, execution
+- **Parsing** → Custom recursive descent parser, tokenization
+- **Data Structures** → Efficient use of vectors, sets, maps
+- **File I/O** → Persistent storage and retrieval
+- **Algorithms** → Sorting, searching, filtering
+- **Software Design** → Modular architecture, separation of concerns
+- **Error Handling** → Comprehensive validation and messaging
+
+---
+
+## 📝 Code Quality
+
+✨ **Well-Structured**
+- Modular design with clear separation of concerns
+- Each component has a specific responsibility
+- Clean interfaces between modules
+
+🛡️ **Robust**
+- Comprehensive error handling
+- Input validation at all levels
+- Type checking and bounds verification
+
+📖 **Maintainable**
+- Clear naming conventions
+- Logical file organization
+- Consistent coding style
+
+---
+
+## 👨‍💻 Author
 
 ## Author
 
@@ -340,7 +435,14 @@ A passionate developer interested in database systems and programming.
 
 - GitHub: [@mrstrange2003](https://github.com/mrstrange2003)
 - LinkedIn: [J Dipayan Rao](https://www.linkedin.com/in/dipayan-rao)
-  
 ---
 
-**Happy querying! 🚀**
+<div align="center">
+
+**[⭐ Star this repo if you found it helpful!](https://github.com/mrstrange2003/KittyDB)**
+
+**[🐛 Report Issues](https://github.com/mrstrange2003/KittyDB/issues)** • **[💡 Suggest Features](https://github.com/mrstrange2003/KittyDB/issues)**
+
+**Happy querying! 🚀🐱**
+
+</div>
