@@ -253,13 +253,25 @@ bool selectColumns(
         std::vector<std::string> results;
         evaluateAggregate(columns, rows, aggregates, results);
 
-        for (size_t i = 0; i < aggregates.size(); i++)
+        std::vector<std::string> headers;
+        for (const auto &agg : aggregates)
         {
-            if (i)
-                std::cout << " | ";
-            std::cout << results[i];
+            if (agg.type == AggregateType::COUNT)
+                headers.push_back("COUNT(" + agg.column + ")");
+            else if (agg.type == AggregateType::SUM)
+                headers.push_back("SUM(" + agg.column + ")");
+            else if (agg.type == AggregateType::AVG)
+                headers.push_back("AVG(" + agg.column + ")");
+            else if (agg.type == AggregateType::MIN)
+                headers.push_back("MIN(" + agg.column + ")");
+            else if (agg.type == AggregateType::MAX)
+                headers.push_back("MAX(" + agg.column + ")");
         }
-        std::cout << "\n";
+
+        std::vector<std::vector<std::string>> outRows;
+        outRows.push_back(results);
+
+        printPrettyTable(headers, outRows);
         return true;
     }
 
